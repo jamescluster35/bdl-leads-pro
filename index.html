@@ -40,6 +40,7 @@
 .kb-sum-lbl{font-size:10px;color:#475569;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
 
 @media(max-width:768px){.hacts .hb-g{display:none}.hacts .hb-o{display:none}#ulbl{display:none}.syns{display:none}.hdr{padding:10px 14px}.brand h1{font-size:15px}.hacts{gap:5px}.hb{font-size:11px;padding:6px 10px}#ai-magic-btn{padding:6px 10px}#mobile-reload-bar{display:flex!important}.main{padding:8px 12px;padding-bottom:100px}#larea{padding-bottom:100px}.stats{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}.sc-val{font-size:20px}.sc-body{padding:10px 12px 8px}.tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}.tab{white-space:nowrap;font-size:11px;padding:7px 12px}.filters{flex-wrap:wrap;gap:6px;padding:6px 0}#srch{width:100%;flex:1 1 100%;font-size:14px;padding:9px 12px}.filters input,.filters select{font-size:12px;padding:7px 9px;border-radius:8px}.addb{padding:8px 12px;font-size:12px;border-radius:8px}.twrap{border:none;border-radius:0;overflow:visible;background:transparent}table,tbody{display:block;width:100%}thead{display:none}tbody{display:flex;flex-direction:column;gap:8px}tbody tr{display:flex;flex-direction:column;background:#0a0a0a!important;border:1px solid #1a1a1a;border-radius:14px;padding:12px 14px;animation:cardIn .25s ease both;transform:none!important;transition:border-color .2s}tbody tr:hover{background:#0d0d0d!important;border-color:#2a2a2a;transform:none!important}td{display:block;border:none!important;padding:2px 0!important;background:transparent!important}td:nth-child(1){display:none}td:nth-child(6),td:nth-child(7),td:nth-child(8),td:nth-child(10){display:none}td:nth-child(3){font-size:14px;font-weight:800;color:#e2e8f0;margin-bottom:2px}td:nth-child(4){font-size:12px;color:#64748b;margin-bottom:6px}td:nth-child(5){margin-bottom:8px}td:nth-child(5) .ssel{width:100%;border-radius:8px;padding:7px 10px;font-size:12px}td:nth-child(9){display:flex;gap:6px}.ab{padding:8px 14px;font-size:12px;border-radius:8px;flex:1;text-align:center}#app.lp{overflow:visible}#lp{width:100vw;right:-100vw;border-radius:0;top:0}.lp-foot{padding:12px 16px;gap:6px;position:sticky;bottom:0;background:#000;z-index:10}.lp-save,.lp-del,.lp-fu-btn{padding:12px;font-size:12px;border-radius:10px}.dcards{grid-template-columns:repeat(2,1fr);gap:8px}#ai-panel{width:100vw;border-radius:14px 14px 0 0}#su-sheet{border-radius:16px 16px 0 0}}</style>
+<script src="https://apis.google.com/js/api.js"></script>
 </head>
 <body>
 
@@ -3912,76 +3913,55 @@ function saveGmailAccounts() {
   updateGmailStatus();
 }
 
-// Initialize Gmail API (load Google API client library)
+// Initialize Gmail API (Google API script loaded in <head>)
 function initGmailAPI() {
-  if (gmailApiLoaded) return Promise.resolve();
+  if (gmailApiLoaded) {
+    console.log('✅ Gmail API already initialized');
+    return Promise.resolve();
+  }
   
   return new Promise(function(resolve, reject) {
-    // Check if already loaded
-    if (window.gapi) {
-      console.log('🔵 Google API already loaded');
-      gapi.load('client:auth2', function() {
-        gapi.client.init({
-          apiKey: GMAIL_CONFIG.API_KEY,
-          clientId: GMAIL_CONFIG.CLIENT_ID,
-          discoveryDocs: GMAIL_CONFIG.DISCOVERY_DOCS,
-          scope: GMAIL_CONFIG.SCOPES
-        }).then(function() {
-          console.log('✅ Gmail API initialized');
-          gmailApiLoaded = true;
-          resolve();
-        }).catch(function(error) {
-          console.error('❌ Gmail API init error:', error);
-          reject(error);
+    // Wait for gapi to be available (script loads in head)
+    var maxWait = 50; // 5 seconds max
+    var waitCount = 0;
+    
+    function checkGapi() {
+      if (typeof gapi !== 'undefined') {
+        console.log('✅ Google API (gapi) found');
+        
+        // Load client and auth2
+        gapi.load('client:auth2', function() {
+          console.log('🔵 Initializing Gmail client...');
+          
+          gapi.client.init({
+            apiKey: GMAIL_CONFIG.API_KEY,
+            clientId: GMAIL_CONFIG.CLIENT_ID,
+            discoveryDocs: GMAIL_CONFIG.DISCOVERY_DOCS,
+            scope: GMAIL_CONFIG.SCOPES
+          }).then(function() {
+            console.log('✅ Gmail API initialized successfully');
+            gmailApiLoaded = true;
+            resolve();
+          }).catch(function(error) {
+            console.error('❌ Gmail client init error:', error);
+            reject(error || new Error('Gmail client init failed'));
+          });
+        }, function(error) {
+          console.error('❌ gapi.load error:', error);
+          reject(new Error('Failed to load gapi modules: ' + (error || 'unknown error')));
         });
-      });
-      return;
+      } else {
+        waitCount++;
+        if (waitCount < maxWait) {
+          setTimeout(checkGapi, 100);
+        } else {
+          console.error('❌ Timeout waiting for gapi');
+          reject(new Error('Google API script did not load. Check if apis.google.com is blocked.'));
+        }
+      }
     }
     
-    // Load Google API client
-    console.log('🔵 Loading Google API script...');
-    var script = document.createElement('script');
-    script.src = 'https://apis.google.com/js/api.js';
-    
-    // Timeout after 10 seconds
-    var timeout = setTimeout(function() {
-      console.error('❌ Google API load timeout');
-      reject(new Error('Timeout loading Google API. Check your internet connection.'));
-    }, 10000);
-    
-    script.onload = function() {
-      clearTimeout(timeout);
-      console.log('✅ Google API script loaded');
-      
-      gapi.load('client:auth2', function() {
-        console.log('🔵 Initializing Gmail client...');
-        gapi.client.init({
-          apiKey: GMAIL_CONFIG.API_KEY,
-          clientId: GMAIL_CONFIG.CLIENT_ID,
-          discoveryDocs: GMAIL_CONFIG.DISCOVERY_DOCS,
-          scope: GMAIL_CONFIG.SCOPES
-        }).then(function() {
-          console.log('✅ Gmail API initialized successfully');
-          gmailApiLoaded = true;
-          resolve();
-        }).catch(function(error) {
-          console.error('❌ Gmail API init failed:', error);
-          reject(error);
-        });
-      }, function(error) {
-        clearTimeout(timeout);
-        console.error('❌ gapi.load failed:', error);
-        reject(new Error('Failed to load Google API client: ' + error));
-      });
-    };
-    
-    script.onerror = function(error) {
-      clearTimeout(timeout);
-      console.error('❌ Script load error:', error);
-      reject(new Error('Failed to load Google API script. Check if apis.google.com is blocked.'));
-    };
-    
-    document.head.appendChild(script);
+    checkGapi();
   });
 }
 
@@ -4392,7 +4372,6 @@ function testGmailSetup() {
   var results = [];
   
   // Test 1: Check credentials
-  console.log('🧪 Test 1: Checking credentials...');
   if (!GMAIL_CONFIG.CLIENT_ID || GMAIL_CONFIG.CLIENT_ID.includes('YOUR_CLIENT_ID')) {
     results.push({ok: false, msg: 'CLIENT_ID not configured'});
   } else {
@@ -4406,65 +4385,59 @@ function testGmailSetup() {
   }
   
   // Test 2: Load Google API
-  console.log('🧪 Test 2: Loading Google API...');
   initGmailAPI().then(function() {
     results.push({ok: true, msg: 'Google API loaded successfully'});
     
     // Test 3: Check OAuth initialization
-    console.log('🧪 Test 3: Checking OAuth...');
     if (gapi && gapi.auth2 && gapi.auth2.getAuthInstance()) {
       results.push({ok: true, msg: 'OAuth initialized successfully'});
     } else {
       results.push({ok: false, msg: 'OAuth not initialized'});
     }
     
-    // Display results
-    var allPassed = results.every(function(r) { return r.ok; });
-    
-    statusEl.textContent = allPassed ? 'All Tests Passed' : 'Some Tests Failed';
-    statusEl.style.background = allPassed ? 'rgba(34,197,94,.3)' : 'rgba(239,68,68,.3)';
-    statusEl.style.color = allPassed ? '#22c55e' : '#ef4444';
-    
-    var html = '<div style="margin-top:10px">';
-    results.forEach(function(r) {
-      html += '<div style="padding:8px 12px;margin-bottom:5px;background:' + (r.ok ? 'rgba(34,197,94,.1)' : 'rgba(239,68,68,.1)') + ';border:1px solid ' + (r.ok ? 'rgba(34,197,94,.2)' : 'rgba(239,68,68,.2)') + ';border-radius:6px;color:' + (r.ok ? '#22c55e' : '#ef4444') + ';font-size:13px">';
-      html += (r.ok ? '✓' : '✗') + ' ' + r.msg;
-      html += '</div>';
-    });
-    
-    if (allPassed) {
-      html += '<div style="margin-top:15px;padding:12px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);border-radius:6px;color:#60a5fa;font-size:13px">';
-      html += '✓ Setup verified! You can now connect your Gmail accounts.';
-      html += '</div>';
-    } else {
-      html += '<div style="margin-top:15px;padding:12px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:6px;color:#ef4444;font-size:13px">';
-      html += '✗ Setup incomplete. Please check the errors above and refer to the setup guide.';
-      html += '</div>';
-    }
-    
-    html += '</div>';
-    resultsEl.innerHTML = html;
-    
-    console.log('🧪 Test results:', results);
+    displayTestResults(results, statusEl, resultsEl);
     
   }).catch(function(error) {
-    results.push({ok: false, msg: 'Failed to load Google API: ' + error.message});
+    var errorMsg = 'Unknown error';
+    if (error && error.message) {
+      errorMsg = error.message;
+    } else if (error && error.error) {
+      errorMsg = error.error;
+    } else if (typeof error === 'string') {
+      errorMsg = error;
+    }
     
-    statusEl.textContent = 'Test Failed';
-    statusEl.style.background = 'rgba(239,68,68,.3)';
-    statusEl.style.color = '#ef4444';
-    
-    var html = '<div style="margin-top:10px">';
-    results.forEach(function(r) {
-      html += '<div style="padding:8px 12px;margin-bottom:5px;background:' + (r.ok ? 'rgba(34,197,94,.1)' : 'rgba(239,68,68,.1)') + ';border:1px solid ' + (r.ok ? 'rgba(34,197,94,.2)' : 'rgba(239,68,68,.2)') + ';border-radius:6px;color:' + (r.ok ? '#22c55e' : '#ef4444') + ';font-size:13px">';
-      html += (r.ok ? '✓' : '✗') + ' ' + r.msg;
-      html += '</div>';
-    });
-    html += '</div>';
-    resultsEl.innerHTML = html;
-    
-    console.error('🧪 Test failed:', error);
+    results.push({ok: false, msg: 'Failed to load Google API: ' + errorMsg});
+    displayTestResults(results, statusEl, resultsEl);
   });
+}
+
+function displayTestResults(results, statusEl, resultsEl) {
+  var allPassed = results.every(function(r) { return r.ok; });
+  
+  statusEl.textContent = allPassed ? 'All Tests Passed' : 'Some Tests Failed';
+  statusEl.style.background = allPassed ? 'rgba(34,197,94,.3)' : 'rgba(239,68,68,.3)';
+  statusEl.style.color = allPassed ? '#22c55e' : '#ef4444';
+  
+  var html = '<div style="margin-top:10px">';
+  results.forEach(function(r) {
+    html += '<div style="padding:8px 12px;margin-bottom:5px;background:' + (r.ok ? 'rgba(34,197,94,.1)' : 'rgba(239,68,68,.1)') + ';border:1px solid ' + (r.ok ? 'rgba(34,197,94,.2)' : 'rgba(239,68,68,.2)') + ';border-radius:6px;color:' + (r.ok ? '#22c55e' : '#ef4444') + ';font-size:13px">';
+    html += (r.ok ? '✓' : '✗') + ' ' + r.msg;
+    html += '</div>';
+  });
+  
+  if (allPassed) {
+    html += '<div style="margin-top:15px;padding:12px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);border-radius:6px;color:#60a5fa;font-size:13px">';
+    html += '✓ Setup verified! You can now connect your Gmail accounts.';
+    html += '</div>';
+  } else {
+    html += '<div style="margin-top:15px;padding:12px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:6px;color:#ef4444;font-size:13px">';
+    html += '✗ Check console (F12) for details. Likely: network blocking apis.google.com';
+    html += '</div>';
+  }
+  
+  html += '</div>';
+  resultsEl.innerHTML = html;
 }
 
 // Initialize Gmail on app load
