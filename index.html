@@ -40,6 +40,7 @@
 .kb-sum-lbl{font-size:10px;color:#475569;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
 
 @media(max-width:768px){.hacts .hb-g{display:none}.hacts .hb-o{display:none}#ulbl{display:none}.syns{display:none}.hdr{padding:10px 14px}.brand h1{font-size:15px}.hacts{gap:5px}.hb{font-size:11px;padding:6px 10px}#ai-magic-btn{padding:6px 10px}#mobile-reload-bar{display:flex!important}.main{padding:8px 12px;padding-bottom:100px}#larea{padding-bottom:100px}.stats{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}.sc-val{font-size:20px}.sc-body{padding:10px 12px 8px}.tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}.tab{white-space:nowrap;font-size:11px;padding:7px 12px}.filters{flex-wrap:wrap;gap:6px;padding:6px 0}#srch{width:100%;flex:1 1 100%;font-size:14px;padding:9px 12px}.filters input,.filters select{font-size:12px;padding:7px 9px;border-radius:8px}.addb{padding:8px 12px;font-size:12px;border-radius:8px}.twrap{border:none;border-radius:0;overflow:visible;background:transparent}table,tbody{display:block;width:100%}thead{display:none}tbody{display:flex;flex-direction:column;gap:8px}tbody tr{display:flex;flex-direction:column;background:#0a0a0a!important;border:1px solid #1a1a1a;border-radius:14px;padding:12px 14px;animation:cardIn .25s ease both;transform:none!important;transition:border-color .2s}tbody tr:hover{background:#0d0d0d!important;border-color:#2a2a2a;transform:none!important}td{display:block;border:none!important;padding:2px 0!important;background:transparent!important}td:nth-child(1){display:none}td:nth-child(6),td:nth-child(7),td:nth-child(8),td:nth-child(10){display:none}td:nth-child(3){font-size:14px;font-weight:800;color:#e2e8f0;margin-bottom:2px}td:nth-child(4){font-size:12px;color:#64748b;margin-bottom:6px}td:nth-child(5){margin-bottom:8px}td:nth-child(5) .ssel{width:100%;border-radius:8px;padding:7px 10px;font-size:12px}td:nth-child(9){display:flex;gap:6px}.ab{padding:8px 14px;font-size:12px;border-radius:8px;flex:1;text-align:center}#app.lp{overflow:visible}#lp{width:100vw;right:-100vw;border-radius:0;top:0}.lp-foot{padding:12px 16px;gap:6px;position:sticky;bottom:0;background:#000;z-index:10}.lp-save,.lp-del,.lp-fu-btn{padding:12px;font-size:12px;border-radius:10px}.dcards{grid-template-columns:repeat(2,1fr);gap:8px}#ai-panel{width:100vw;border-radius:14px 14px 0 0}#su-sheet{border-radius:16px 16px 0 0}}</style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 
@@ -3841,637 +3842,278 @@ function saveNewContact(){
 }
 
 // ============================================================================
-// GMAIL API INTEGRATION
+// GMAIL API INTEGRATION — GIS OAuth + fetch() for Gmail REST calls
 // ============================================================================
 
-/*
- * ═══════════════════════════════════════════════════════════════════
- * GMAIL API CREDENTIALS - SIMPLE SETUP
- * ═══════════════════════════════════════════════════════════════════
- * 
- * STEP 1: Get your credentials from Google Cloud Console
- *         - Client ID looks like: 123456789-abc.apps.googleusercontent.com
- *         - API Key looks like: AIzaSyABCDEFGHIJKLMNOPQRSTUVWXYZ
- * 
- * STEP 2: Replace the text below with YOUR actual credentials
- *         (Keep the quotes, just replace the text inside)
- * 
- * STEP 3: Save this file and refresh your browser
- * 
- * ⚠️ SECURITY NOTE:
- * This version uses plaintext credentials (easier to set up).
- * If uploading to GitHub:
- *   - Keep repo PRIVATE, or
- *   - See SECURE_CREDENTIALS_GUIDE.md for encoding method
- * 
- * ═══════════════════════════════════════════════════════════════════
- */
-
-const GMAIL_CONFIG = {
-  // ✅ Your Client ID is configured
-  CLIENT_ID: '981783033378-0ethrtasbt6u2k8olq9rjqhep0qgha6t.apps.googleusercontent.com',
-  
-  // ✅ Your API Key is configured
-  API_KEY: 'AIzaSyAbnJKG_iVS3RF8WlJVA0sSlXb18ZvwcgM',
-  
-  // Don't change these:
-  DISCOVERY_DOCS: ['https://www.googleapis.com/discovery/v1/apis/gmail/v1/rest'],
-  SCOPES: 'https://www.googleapis.com/auth/gmail.readonly'
-};
-
-/*
- * EXAMPLE (with fake credentials):
- * 
- * const GMAIL_CONFIG = {
- *   CLIENT_ID: '123456789-abc123xyz.apps.googleusercontent.com',
- *   API_KEY: 'AIzaSyABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890',
- *   DISCOVERY_DOCS: ['https://www.googleapis.com/discovery/v1/apis/gmail/v1/rest'],
- *   SCOPES: 'https://www.googleapis.com/auth/gmail.readonly'
- * };
- * 
- * Just replace YOUR_CLIENT_ID_HERE and YOUR_API_KEY_HERE with your real ones!
- */
-
 var gmailApiLoaded = false;
-var gmailAccounts = {}; // { email: { token, refreshToken, expiresAt } }
+var gmailAccounts = {};
 
-// Load Gmail accounts from localStorage
 function loadGmailAccounts() {
   try {
-    var stored = localStorage.getItem('bdl-gmail-accounts');
-    if (stored) gmailAccounts = JSON.parse(stored);
-  } catch(e) {
-    gmailAccounts = {};
-  }
+    var s = localStorage.getItem('bdl-gmail-accounts');
+    if (s) gmailAccounts = JSON.parse(s);
+  } catch(e) { gmailAccounts = {}; }
   updateGmailStatus();
 }
 
-// Save Gmail accounts to localStorage
 function saveGmailAccounts() {
   localStorage.setItem('bdl-gmail-accounts', JSON.stringify(gmailAccounts));
   updateGmailStatus();
 }
 
-// Initialize Gmail API (load Google API client library)
+// No longer uses gapi — just resolves immediately
 function initGmailAPI() {
-  if (gmailApiLoaded) return Promise.resolve();
-  
-  return new Promise(function(resolve, reject) {
-    // Check if already loaded
-    if (window.gapi) {
-      console.log('🔵 Google API already loaded');
-      gapi.load('client:auth2', function() {
-        gapi.client.init({
-          apiKey: GMAIL_CONFIG.API_KEY,
-          clientId: GMAIL_CONFIG.CLIENT_ID,
-          discoveryDocs: GMAIL_CONFIG.DISCOVERY_DOCS,
-          scope: GMAIL_CONFIG.SCOPES
-        }).then(function() {
-          console.log('✅ Gmail API initialized');
-          gmailApiLoaded = true;
-          resolve();
-        }).catch(function(error) {
-          console.error('❌ Gmail API init error:', error);
-          reject(error);
-        });
-      });
-      return;
-    }
-    
-    // Load Google API client
-    console.log('🔵 Loading Google API script...');
-    var script = document.createElement('script');
-    script.src = 'https://apis.google.com/js/api.js';
-    
-    // Timeout after 10 seconds
-    var timeout = setTimeout(function() {
-      console.error('❌ Google API load timeout');
-      reject(new Error('Timeout loading Google API. Check your internet connection.'));
-    }, 10000);
-    
-    script.onload = function() {
-      clearTimeout(timeout);
-      console.log('✅ Google API script loaded');
-      
-      gapi.load('client:auth2', function() {
-        console.log('🔵 Initializing Gmail client...');
-        gapi.client.init({
-          apiKey: GMAIL_CONFIG.API_KEY,
-          clientId: GMAIL_CONFIG.CLIENT_ID,
-          discoveryDocs: GMAIL_CONFIG.DISCOVERY_DOCS,
-          scope: GMAIL_CONFIG.SCOPES
-        }).then(function() {
-          console.log('✅ Gmail API initialized successfully');
-          gmailApiLoaded = true;
-          resolve();
-        }).catch(function(error) {
-          console.error('❌ Gmail API init failed:', error);
-          reject(error);
-        });
-      }, function(error) {
-        clearTimeout(timeout);
-        console.error('❌ gapi.load failed:', error);
-        reject(new Error('Failed to load Google API client: ' + error));
-      });
-    };
-    
-    script.onerror = function(error) {
-      clearTimeout(timeout);
-      console.error('❌ Script load error:', error);
-      reject(new Error('Failed to load Google API script. Check if apis.google.com is blocked.'));
-    };
-    
-    document.head.appendChild(script);
-  });
+  gmailApiLoaded = true;
+  return Promise.resolve();
 }
 
-// Connect a Gmail account via OAuth
+// Connect via Google Identity Services (GIS) token flow
 function connectGmailAccount(senderEmail) {
-  if (!senderEmail) {
-    flash('Please select a sender email first', 'bad');
+  if (!senderEmail) { flash('Select a sender email first', 'bad'); return; }
+  if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
+    flash('Google Identity Services not loaded — hard refresh (Ctrl+Shift+R) and try again', 'bad');
     return;
   }
-  
-  console.log('🔵 Connecting Gmail account:', senderEmail);
-  flash('Connecting ' + senderEmail + '...', 'info');
-  
-  initGmailAPI().then(function() {
-    console.log('✅ Gmail API loaded successfully');
-    
-    // Check if gapi.auth2 is available
-    if (!gapi || !gapi.auth2) {
-      console.error('❌ gapi.auth2 not available');
-      flash('Gmail API not initialized. Please refresh and try again.', 'bad');
-      return;
-    }
-    
-    var authInstance = gapi.auth2.getAuthInstance();
-    if (!authInstance) {
-      console.error('❌ Auth instance not available');
-      flash('OAuth not initialized. Please refresh and try again.', 'bad');
-      return;
-    }
-    
-    console.log('🔵 Opening OAuth popup for:', senderEmail);
-    
-    authInstance.signIn({
-      login_hint: senderEmail,
-      prompt: 'select_account'
-    }).then(function(googleUser) {
-      console.log('✅ OAuth successful for:', senderEmail);
-      
-      var authResponse = googleUser.getAuthResponse(true);
-      var profile = googleUser.getBasicProfile();
-      var email = profile.getEmail();
-      
-      console.log('✅ Connected email:', email);
-      
-      // Store token info
-      gmailAccounts[email] = {
-        token: authResponse.access_token,
-        refreshToken: authResponse.id_token,
-        expiresAt: Date.now() + (authResponse.expires_in * 1000),
+  flash('Opening Google sign-in for ' + senderEmail + '...');
+  var tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GMAIL_CONFIG.CLIENT_ID,
+    scope: GMAIL_CONFIG.SCOPES,
+    hint: senderEmail,
+    callback: function(tokenResponse) {
+      if (tokenResponse.error) {
+        flash('Auth failed: ' + tokenResponse.error, 'bad');
+        return;
+      }
+      gmailAccounts[senderEmail] = {
+        token: tokenResponse.access_token,
+        expiresAt: Date.now() + ((tokenResponse.expires_in || 3600) * 1000),
         connected: true,
         lastSync: null
       };
-      
       saveGmailAccounts();
-      flash('✓ Connected ' + email);
+      flash('✓ Connected ' + senderEmail);
       renderGmailTab();
-    }).catch(function(error) {
-      console.error('❌ Gmail auth error:', error);
-      
-      // More helpful error messages
-      if (error.error === 'popup_closed_by_user') {
-        flash('Popup closed. Please try again.', 'bad');
-      } else if (error.error === 'access_denied') {
-        flash('Access denied. You must click "Allow" to connect.', 'bad');
-      } else if (error.error === 'popup_blocked_by_browser') {
-        flash('Popup blocked! Please allow popups for this site.', 'bad');
-      } else if (error.error === 'idpiframe_initialization_failed') {
-        flash('Cookie/3rd party error. Check browser settings or try incognito.', 'bad');
-      } else {
-        flash('Connection failed: ' + (error.error || error.message || 'Unknown error'), 'bad');
-      }
-    });
-  }).catch(function(error) {
-    console.error('❌ Gmail API init error:', error);
-    flash('Could not load Gmail API. Check console for details.', 'bad');
+    }
   });
+  tokenClient.requestAccessToken({ prompt: 'select_account' });
 }
 
-// Disconnect a Gmail account
 function disconnectGmailAccount(email) {
   if (confirm('Disconnect ' + email + ' from Gmail sync?')) {
     delete gmailAccounts[email];
     saveGmailAccounts();
     flash('✓ Disconnected ' + email);
-  }
-}
-
-// Check if token is expired
-function isTokenExpired(account) {
-  return !account.expiresAt || Date.now() >= account.expiresAt;
-}
-
-// Scan all connected Gmail accounts for new replies
-function scanAllGmailAccounts() {
-  var connectedEmails = Object.keys(gmailAccounts).filter(function(email) {
-    return gmailAccounts[email].connected;
-  });
-  
-  if (!connectedEmails.length) {
-    flash('No Gmail accounts connected', 'bad');
-    return;
-  }
-  
-  ge('sdot').style.background = '#3b82f6';
-  ge('stxt').textContent = 'Scanning ' + connectedEmails.length + ' Gmail accounts...';
-  
-  var totalReplies = 0;
-  var scanned = 0;
-  
-  connectedEmails.forEach(function(email) {
-    scanGmailAccount(email).then(function(replyCount) {
-      totalReplies += replyCount;
-      scanned++;
-      
-      if (scanned === connectedEmails.length) {
-        ge('sdot').style.background = '#22c55e';
-        ge('stxt').textContent = 'Ready';
-        
-        if (totalReplies > 0) {
-          flash('✓ Found ' + totalReplies + ' new replies!');
-          renderAll(); // Refresh UI to show updated leads
-        } else {
-          flash('No new replies found');
-        }
-      }
-    }).catch(function(error) {
-      scanned++;
-      console.error('Error scanning ' + email + ':', error);
-      
-      if (scanned === connectedEmails.length) {
-        ge('sdot').style.background = '#22c55e';
-        ge('stxt').textContent = 'Ready';
-      }
-    });
-  });
-}
-
-// Scan a single Gmail account for replies
-function scanGmailAccount(email) {
-  return new Promise(function(resolve, reject) {
-    var account = gmailAccounts[email];
-    
-    if (!account || !account.connected) {
-      reject('Account not connected');
-      return;
-    }
-    
-    // Check if token is expired
-    if (isTokenExpired(account)) {
-      flash(email + ' token expired - please reconnect', 'bad');
-      reject('Token expired');
-      return;
-    }
-    
-    // Set access token
-    gapi.client.setToken({ access_token: account.token });
-    
-    // Get last sync time (or 7 days ago)
-    var lastSync = account.lastSync || (Date.now() - (7 * 24 * 60 * 60 * 1000));
-    var afterDate = new Date(lastSync).toISOString().split('T')[0]; // YYYY-MM-DD format
-    
-    // Search for messages after last sync
-    var query = 'in:inbox after:' + afterDate + ' -from:me';
-    
-    gapi.client.gmail.users.messages.list({
-      userId: 'me',
-      q: query,
-      maxResults: 50
-    }).then(function(response) {
-      var messages = response.result.messages || [];
-      
-      if (!messages.length) {
-        account.lastSync = Date.now();
-        saveGmailAccounts();
-        resolve(0);
-        return;
-      }
-      
-      // Fetch full message details and process replies
-      var processed = 0;
-      var replyCount = 0;
-      
-      messages.forEach(function(message) {
-        gapi.client.gmail.users.messages.get({
-          userId: 'me',
-          id: message.id,
-          format: 'full'
-        }).then(function(msgResponse) {
-          var msg = msgResponse.result;
-          var headers = msg.payload.headers;
-          
-          // Extract sender email and subject
-          var fromHeader = headers.find(function(h) { return h.name === 'From'; });
-          var subjectHeader = headers.find(function(h) { return h.name === 'Subject'; });
-          var dateHeader = headers.find(function(h) { return h.name === 'Date'; });
-          
-          var from = fromHeader ? fromHeader.value : '';
-          var subject = subjectHeader ? subjectHeader.value : '';
-          var date = dateHeader ? dateHeader.value : '';
-          
-          // Extract body
-          var body = extractMessageBody(msg.payload);
-          
-          // Try to match to a lead
-          var matchedLead = findLeadByEmail(from);
-          
-          if (matchedLead) {
-            // Process reply and update lead
-            processGmailReply(matchedLead, {
-              from: from,
-              subject: subject,
-              body: body,
-              date: date,
-              senderAccount: email
-            });
-            replyCount++;
-          }
-          
-          processed++;
-          if (processed === messages.length) {
-            account.lastSync = Date.now();
-            saveGmailAccounts();
-            resolve(replyCount);
-          }
-        }).catch(function(error) {
-          console.error('Error fetching message:', error);
-          processed++;
-          if (processed === messages.length) {
-            account.lastSync = Date.now();
-            saveGmailAccounts();
-            resolve(replyCount);
-          }
-        });
-      });
-    }).catch(function(error) {
-      console.error('Error listing messages:', error);
-      reject(error);
-    });
-  });
-}
-
-// Extract message body from Gmail payload
-function extractMessageBody(payload) {
-  var body = '';
-  
-  if (payload.parts) {
-    payload.parts.forEach(function(part) {
-      if (part.mimeType === 'text/plain' && part.body.data) {
-        body += atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
-      } else if (part.parts) {
-        body += extractMessageBody(part);
-      }
-    });
-  } else if (payload.body && payload.body.data) {
-    body = atob(payload.body.data.replace(/-/g, '+').replace(/_/g, '/'));
-  }
-  
-  return body;
-}
-
-// Find lead by email address (check primary and additional contacts)
-function findLeadByEmail(emailAddress) {
-  // Extract email from "Name <email@example.com>" format
-  var match = emailAddress.match(/<(.+?)>/);
-  var cleanEmail = match ? match[1].toLowerCase() : emailAddress.toLowerCase();
-  
-  return leads.find(function(lead) {
-    // Check primary email
-    if (getPrimaryEmail(lead) && getPrimaryEmail(lead).toLowerCase() === cleanEmail) {
-      return true;
-    }
-    
-    // Check additional contacts
-    var contacts = lead.contacts || [];
-    return contacts.some(function(c) {
-      return c.email && c.email.toLowerCase() === cleanEmail;
-    });
-  });
-}
-
-// Process a Gmail reply and update the lead
-function processGmailReply(lead, replyData) {
-  var replyDate = today();
-  
-  // Add to outreach log
-  var newLog = {
-    date: replyDate,
-    note: 'Reply: ' + (replyData.subject || 'No subject'),
-    sender: replyData.senderAccount,
-    details: 'From: ' + replyData.from
-  };
-  
-  // Update lead
-  leads = leads.map(function(l) {
-    if (String(l.id) !== String(lead.id)) return l;
-    
-    return Object.assign({}, l, {
-      status: 'Replied',
-      lastContacted: replyDate,
-      lastSender: replyData.senderAccount,
-      outreachLog: (l.outreachLog || []).concat([newLog])
-    });
-  });
-  
-  saveLoc();
-  
-  // Sync to Sheets
-  var updatedLead = leads.find(function(l) { return String(l.id) === String(lead.id); });
-  if (updatedLead) syncLead(updatedLead);
-  
-  // Optional: Use Smart Update to extract additional info from reply body
-  // This would call Gemini to analyze the reply and extract relevant data
-}
-
-// Update Gmail connection status in UI
-function updateGmailStatus() {
-  // Render the Gmail tab if user is on it
-  if (ge('tab-gmail') && !ge('tab-gmail').classList.contains('h')) {
     renderGmailTab();
   }
 }
 
-// Render Gmail tab with sender connections
-function renderGmailTab() {
-  // Ensure SENDERS is populated
-  if (!SENDERS || SENDERS.length === 0) {
-    console.warn('⚠️ SENDERS array is empty, loading defaults');
-    loadSenders();
-  }
-  
-  var connectedCount = Object.keys(gmailAccounts).filter(function(email) {
-    return gmailAccounts[email].connected;
-  }).length;
-  
-  // Update badge
-  var badge = ge('gmail-badge');
-  if (badge) {
-    if (connectedCount > 0) {
-      badge.textContent = connectedCount + ' Connected';
-      badge.style.background = 'rgba(34,197,94,.3)';
-    } else {
-      badge.textContent = 'Not Connected';
-      badge.style.background = 'rgba(255,255,255,.2)';
-    }
-  }
-  
-  // Render account cards
-  var html = '';
-  
-  if (SENDERS.length === 0) {
-    html += '<div style="padding:40px;text-align:center;color:#94a3b8">';
-    html += '<p style="margin-bottom:20px">No sender emails configured</p>';
-    html += '<button class="hb hb-o" onclick="addSender()">+ Add First Sender Email</button>';
-    html += '</div>';
-  } else {
-    SENDERS.forEach(function(senderEmail) {
-      var connected = gmailAccounts[senderEmail] && gmailAccounts[senderEmail].connected;
-      var lastSync = connected && gmailAccounts[senderEmail].lastSync ? 
-        new Date(gmailAccounts[senderEmail].lastSync).toLocaleString() : 'Never';
-      
-      var cardBg = connected ? 'linear-gradient(135deg,rgba(34,197,94,.1) 0%,rgba(16,185,129,.05) 100%)' : '#000';
-      var statusColor = connected ? '#22c55e' : '#64748b';
-      var statusIcon = connected ? '✓' : '○';
-      
-      html += '<div style="background:' + cardBg + ';border:1px solid ' + (connected ? 'rgba(34,197,94,.3)' : '#1f1f1f') + ';border-radius:12px;padding:20px">';
-      html += '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:15px">';
-      html += '<div style="flex:1">';
-      html += '<div style="font-weight:700;font-size:16px;color:var(--text);margin-bottom:6px;display:flex;align-items:center;gap:8px">';
-      html += '<span style="color:' + statusColor + ';font-size:20px">' + statusIcon + '</span>' + senderEmail;
-      html += '</div>';
-      html += '<div style="font-size:12px;color:#64748b">Last sync: ' + lastSync + '</div>';
-      html += '</div>';
-      html += '</div>';
-      
-      if (connected) {
-        html += '<button class="hb" style="width:100%;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.2)" onclick="disconnectGmailAccount(\'' + senderEmail + '\')">Disconnect</button>';
-      } else {
-        html += '<button class="hb hb-g" style="width:100%" onclick="connectGmailAccount(\'' + senderEmail + '\')">Connect Account</button>';
-      }
-      
-      html += '</div>';
-    });
-  }
-  
-  ge('gmail-accounts-grid').innerHTML = html;
-  
-  // Show/hide setup prompt
-  var setupPrompt = ge('gmail-setup-prompt');
-  if (setupPrompt) {
-    setupPrompt.style.display = connectedCount === 0 ? 'block' : 'none';
-  }
-  
-  console.log('📊 Gmail tab rendered:', SENDERS.length, 'senders,', connectedCount, 'connected');
+function isTokenExpired(account) {
+  return !account.expiresAt || Date.now() >= account.expiresAt;
 }
 
-// Test Gmail setup configuration
-function testGmailSetup() {
-  var statusEl = ge('test-status');
-  var resultsEl = ge('test-results');
-  
-  statusEl.textContent = 'Testing...';
-  statusEl.style.background = 'rgba(249,115,22,.3)';
-  statusEl.style.color = '#f97316';
-  
-  resultsEl.style.display = 'block';
-  resultsEl.innerHTML = '<div style="color:#94a3b8;font-size:13px">Running diagnostics...</div>';
-  
-  var results = [];
-  
-  // Test 1: Check credentials
-  console.log('🧪 Test 1: Checking credentials...');
-  if (!GMAIL_CONFIG.CLIENT_ID || GMAIL_CONFIG.CLIENT_ID.includes('YOUR_CLIENT_ID')) {
-    results.push({ok: false, msg: 'CLIENT_ID not configured'});
-  } else {
-    results.push({ok: true, msg: 'CLIENT_ID configured (' + GMAIL_CONFIG.CLIENT_ID.substring(0, 20) + '...)'});
+// All Gmail API calls use fetch() directly — no gapi needed
+function gmailFetch(token, path, params) {
+  var url = 'https://gmail.googleapis.com/gmail/v1/' + path;
+  if (params) {
+    var qs = Object.keys(params).map(function(k) {
+      return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
+    }).join('&');
+    url += '?' + qs;
   }
-  
-  if (!GMAIL_CONFIG.API_KEY || GMAIL_CONFIG.API_KEY.includes('YOUR_API_KEY')) {
-    results.push({ok: false, msg: 'API_KEY not configured'});
-  } else {
-    results.push({ok: true, msg: 'API_KEY configured (' + GMAIL_CONFIG.API_KEY.substring(0, 15) + '...)'});
-  }
-  
-  // Test 2: Load Google API
-  console.log('🧪 Test 2: Loading Google API...');
-  initGmailAPI().then(function() {
-    results.push({ok: true, msg: 'Google API loaded successfully'});
-    
-    // Test 3: Check OAuth initialization
-    console.log('🧪 Test 3: Checking OAuth...');
-    if (gapi && gapi.auth2 && gapi.auth2.getAuthInstance()) {
-      results.push({ok: true, msg: 'OAuth initialized successfully'});
-    } else {
-      results.push({ok: false, msg: 'OAuth not initialized'});
-    }
-    
-    // Display results
-    var allPassed = results.every(function(r) { return r.ok; });
-    
-    statusEl.textContent = allPassed ? 'All Tests Passed' : 'Some Tests Failed';
-    statusEl.style.background = allPassed ? 'rgba(34,197,94,.3)' : 'rgba(239,68,68,.3)';
-    statusEl.style.color = allPassed ? '#22c55e' : '#ef4444';
-    
-    var html = '<div style="margin-top:10px">';
-    results.forEach(function(r) {
-      html += '<div style="padding:8px 12px;margin-bottom:5px;background:' + (r.ok ? 'rgba(34,197,94,.1)' : 'rgba(239,68,68,.1)') + ';border:1px solid ' + (r.ok ? 'rgba(34,197,94,.2)' : 'rgba(239,68,68,.2)') + ';border-radius:6px;color:' + (r.ok ? '#22c55e' : '#ef4444') + ';font-size:13px">';
-      html += (r.ok ? '✓' : '✗') + ' ' + r.msg;
-      html += '</div>';
+  return fetch(url, { headers: { 'Authorization': 'Bearer ' + token } })
+    .then(function(r) { return r.json(); });
+}
+
+function scanAllGmailAccounts() {
+  var connected = Object.keys(gmailAccounts).filter(function(e) {
+    return gmailAccounts[e].connected;
+  });
+  if (!connected.length) { flash('No Gmail accounts connected', 'bad'); return; }
+  ge('sdot').style.background = '#3b82f6';
+  ge('stxt').textContent = 'Scanning ' + connected.length + ' accounts...';
+  var total = 0, done = 0;
+  connected.forEach(function(email) {
+    scanGmailAccount(email).then(function(n) {
+      total += n; done++;
+      if (done === connected.length) {
+        ge('sdot').style.background = '#22c55e';
+        ge('stxt').textContent = 'Ready';
+        if (total > 0) { flash('✓ Found ' + total + ' new replies!'); renderAll(); }
+        else flash('No new replies found');
+      }
+    }).catch(function(err) {
+      done++;
+      console.error('Scan error ' + email + ':', err);
+      if (done === connected.length) {
+        ge('sdot').style.background = '#22c55e';
+        ge('stxt').textContent = 'Ready';
+      }
     });
-    
-    if (allPassed) {
-      html += '<div style="margin-top:15px;padding:12px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);border-radius:6px;color:#60a5fa;font-size:13px">';
-      html += '✓ Setup verified! You can now connect your Gmail accounts.';
-      html += '</div>';
-    } else {
-      html += '<div style="margin-top:15px;padding:12px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:6px;color:#ef4444;font-size:13px">';
-      html += '✗ Setup incomplete. Please check the errors above and refer to the setup guide.';
-      html += '</div>';
-    }
-    
-    html += '</div>';
-    resultsEl.innerHTML = html;
-    
-    console.log('🧪 Test results:', results);
-    
-  }).catch(function(error) {
-    results.push({ok: false, msg: 'Failed to load Google API: ' + error.message});
-    
-    statusEl.textContent = 'Test Failed';
-    statusEl.style.background = 'rgba(239,68,68,.3)';
-    statusEl.style.color = '#ef4444';
-    
-    var html = '<div style="margin-top:10px">';
-    results.forEach(function(r) {
-      html += '<div style="padding:8px 12px;margin-bottom:5px;background:' + (r.ok ? 'rgba(34,197,94,.1)' : 'rgba(239,68,68,.1)') + ';border:1px solid ' + (r.ok ? 'rgba(34,197,94,.2)' : 'rgba(239,68,68,.2)') + ';border-radius:6px;color:' + (r.ok ? '#22c55e' : '#ef4444') + ';font-size:13px">';
-      html += (r.ok ? '✓' : '✗') + ' ' + r.msg;
-      html += '</div>';
-    });
-    html += '</div>';
-    resultsEl.innerHTML = html;
-    
-    console.error('🧪 Test failed:', error);
   });
 }
 
-// Initialize Gmail on app load
+function scanGmailAccount(email) {
+  return new Promise(function(resolve, reject) {
+    var acc = gmailAccounts[email];
+    if (!acc || !acc.connected) { reject('Not connected'); return; }
+    if (isTokenExpired(acc)) { flash(email + ' token expired — reconnect', 'bad'); reject('Expired'); return; }
+    var token = acc.token;
+    var after = new Date(acc.lastSync || (Date.now() - 7*24*60*60*1000)).toISOString().split('T')[0];
+    gmailFetch(token, 'users/me/messages', { q: 'in:inbox after:' + after + ' -from:me', maxResults: 50 })
+      .then(function(data) {
+        var msgs = data.messages || [];
+        if (!msgs.length) { acc.lastSync = Date.now(); saveGmailAccounts(); resolve(0); return; }
+        var processed = 0, replies = 0;
+        msgs.forEach(function(msg) {
+          gmailFetch(token, 'users/me/messages/' + msg.id, { format: 'metadata', metadataHeaders: 'From,Subject' })
+            .then(function(full) {
+              var headers = (full.payload && full.payload.headers) || [];
+              var from = (headers.find(function(h) { return h.name === 'From'; }) || {}).value || '';
+              var subject = (headers.find(function(h) { return h.name === 'Subject'; }) || {}).value || '';
+              var matched = findLeadByEmail(from);
+              if (matched) { processGmailReply(matched, { from: from, subject: subject, senderAccount: email }); replies++; }
+              processed++;
+              if (processed === msgs.length) { acc.lastSync = Date.now(); saveGmailAccounts(); resolve(replies); }
+            }).catch(function() {
+              processed++;
+              if (processed === msgs.length) { acc.lastSync = Date.now(); saveGmailAccounts(); resolve(replies); }
+            });
+        });
+      }).catch(reject);
+  });
+}
+
+function extractMessageBody(payload) {
+  var body = '';
+  if (payload.parts) {
+    payload.parts.forEach(function(part) {
+      if (part.mimeType === 'text/plain' && part.body && part.body.data)
+        body += atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+      else if (part.parts) body += extractMessageBody(part);
+    });
+  } else if (payload.body && payload.body.data) {
+    body = atob(payload.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+  }
+  return body;
+}
+
+function findLeadByEmail(emailAddress) {
+  var m = emailAddress.match(/<(.+?)>/);
+  var clean = (m ? m[1] : emailAddress).toLowerCase();
+  return leads.find(function(lead) {
+    if (getPrimaryEmail(lead) && getPrimaryEmail(lead).toLowerCase() === clean) return true;
+    return (lead.contacts || []).some(function(c) { return c.email && c.email.toLowerCase() === clean; });
+  });
+}
+
+function processGmailReply(lead, replyData) {
+  var d = today();
+  leads = leads.map(function(l) {
+    if (String(l.id) !== String(lead.id)) return l;
+    return Object.assign({}, l, {
+      status: 'Replied', lastContacted: d, lastSender: replyData.senderAccount,
+      outreachLog: (l.outreachLog || []).concat([{
+        date: d, note: 'Reply received: ' + (replyData.subject || 'No subject'), sender: replyData.senderAccount
+      }])
+    });
+  });
+  saveLoc();
+  var u = leads.find(function(l) { return String(l.id) === String(lead.id); });
+  if (u) syncLead(u);
+}
+
+function updateGmailStatus() {
+  if (ge('tab-gmail') && !ge('tab-gmail').classList.contains('h')) renderGmailTab();
+}
+
+function renderGmailTab() {
+  if (!SENDERS || SENDERS.length === 0) loadSenders();
+  var connCount = Object.keys(gmailAccounts).filter(function(e) { return gmailAccounts[e].connected; }).length;
+  var badge = ge('gmail-badge');
+  if (badge) {
+    badge.textContent = connCount > 0 ? connCount + ' Connected' : 'Not Connected';
+    badge.style.background = connCount > 0 ? 'rgba(34,197,94,.3)' : 'rgba(255,255,255,.2)';
+  }
+  var html = '';
+  if (!SENDERS.length) {
+    html = '<div style="padding:40px;text-align:center;color:#94a3b8"><p style="margin-bottom:20px">No sender emails configured</p><button class="hb hb-o" onclick="addSender()">+ Add Sender</button></div>';
+  } else {
+    SENDERS.forEach(function(senderEmail) {
+      var acc = gmailAccounts[senderEmail];
+      var conn = acc && acc.connected;
+      var lastSync = conn && acc.lastSync ? new Date(acc.lastSync).toLocaleString() : 'Never';
+      html += '<div style="background:' + (conn ? 'linear-gradient(135deg,rgba(34,197,94,.1),rgba(16,185,129,.05))' : '#000') + ';border:1px solid ' + (conn ? 'rgba(34,197,94,.3)' : '#1f1f1f') + ';border-radius:12px;padding:20px">';
+      html += '<div style="font-weight:700;font-size:15px;color:var(--text);margin-bottom:6px;display:flex;align-items:center;gap:8px"><span style="color:' + (conn ? '#22c55e' : '#64748b') + ';font-size:18px">' + (conn ? '✓' : '○') + '</span>' + senderEmail + '</div>';
+      html += '<div style="font-size:12px;color:#64748b;margin-bottom:14px">Last sync: ' + lastSync + '</div>';
+      if (conn) {
+        html += '<button class="hb" style="width:100%;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.2)" onclick="disconnectGmailAccount(\'' + senderEmail + '\')">' + 'Disconnect</button>';
+      } else {
+        html += '<button class="hb hb-g" style="width:100%" onclick="connectGmailAccount(\'' + senderEmail + '\')">' + 'Connect Account</button>';
+      }
+      html += '</div>';
+    });
+  }
+  ge('gmail-accounts-grid').innerHTML = html;
+  var sp = ge('gmail-setup-prompt');
+  if (sp) sp.style.display = connCount === 0 ? 'block' : 'none';
+}
+
+function testGmailSetup() {
+  var statusEl = ge('test-status');
+  var resultsEl = ge('test-results');
+  statusEl.textContent = 'Testing...';
+  statusEl.style.background = 'rgba(249,115,22,.3)';
+  statusEl.style.color = '#f97316';
+  resultsEl.style.display = 'block';
+  resultsEl.innerHTML = '<div style="color:#94a3b8;font-size:13px">Running diagnostics...</div>';
+  var results = [];
+
+  // Test 1: CLIENT_ID
+  results.push(GMAIL_CONFIG.CLIENT_ID && !GMAIL_CONFIG.CLIENT_ID.includes('YOUR_CLIENT_ID')
+    ? {ok: true, msg: 'CLIENT_ID configured (' + GMAIL_CONFIG.CLIENT_ID.substring(0, 20) + '...)'}
+    : {ok: false, msg: 'CLIENT_ID not configured'});
+
+  // Test 2: API_KEY
+  results.push(GMAIL_CONFIG.API_KEY && !GMAIL_CONFIG.API_KEY.includes('YOUR_API_KEY')
+    ? {ok: true, msg: 'API_KEY configured (' + GMAIL_CONFIG.API_KEY.substring(0, 15) + '...)'}
+    : {ok: false, msg: 'API_KEY not configured'});
+
+  // Test 3: GIS loaded
+  results.push(typeof google !== 'undefined' && google.accounts && google.accounts.oauth2
+    ? {ok: true, msg: 'Google Identity Services (GIS) loaded ✓'}
+    : {ok: false, msg: 'GIS not loaded — check <head> for accounts.google.com/gsi/client script'});
+
+  // Test 4: Gmail API reachable
+  fetch('https://gmail.googleapis.com/$discovery/rest?version=v1')
+    .then(function(r) {
+      results.push(r.ok
+        ? {ok: true, msg: 'Gmail API reachable ✓'}
+        : {ok: false, msg: 'Gmail API returned HTTP ' + r.status});
+      displayTestResults(results, statusEl, resultsEl);
+    }).catch(function(err) {
+      results.push({ok: false, msg: 'Gmail API not reachable: ' + err.message});
+      displayTestResults(results, statusEl, resultsEl);
+    });
+}
+
+function displayTestResults(results, statusEl, resultsEl) {
+  var allPassed = results.every(function(r) { return r.ok; });
+  statusEl.textContent = allPassed ? 'All Tests Passed' : 'Some Tests Failed';
+  statusEl.style.background = allPassed ? 'rgba(34,197,94,.3)' : 'rgba(239,68,68,.3)';
+  statusEl.style.color = allPassed ? '#22c55e' : '#ef4444';
+  var html = '<div style="margin-top:10px">';
+  results.forEach(function(r) {
+    html += '<div style="padding:8px 12px;margin-bottom:5px;background:' + (r.ok ? 'rgba(34,197,94,.1)' : 'rgba(239,68,68,.1)') + ';border:1px solid ' + (r.ok ? 'rgba(34,197,94,.2)' : 'rgba(239,68,68,.2)') + ';border-radius:6px;color:' + (r.ok ? '#22c55e' : '#ef4444') + ';font-size:13px">' + (r.ok ? '✓' : '✗') + ' ' + r.msg + '</div>';
+  });
+  html += allPassed
+    ? '<div style="margin-top:15px;padding:12px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);border-radius:6px;color:#60a5fa;font-size:13px">✓ Setup complete! Click Connect Account on each sender below.</div>'
+    : '<div style="margin-top:15px;padding:12px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:6px;color:#ef4444;font-size:13px">Fix the errors above then retry.</div>';
+  html += '</div>';
+  resultsEl.innerHTML = html;
+}
+
 function initGmail() {
   loadGmailAccounts();
-  // Optional: Auto-scan on app load
-  // setTimeout(scanAllGmailAccounts, 3000);
 }
 
 </script>
