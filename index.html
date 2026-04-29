@@ -4637,22 +4637,9 @@ Examples:
 
 <script>
   // ==========================================
-  // 1. AUTO-CONNECT TO BDL PRO DATA
-  // ==========================================
-  // This part makes sure the "Bridge" can find your leads list
-  if (typeof window.leads === 'undefined') {
-    if (typeof leads !== 'undefined') {
-      window.leads = leads;
-    } else {
-      window.leads = JSON.parse(localStorage.getItem('bdl_leads')) || [];
-    }
-  }
-
-  // ==========================================
-  // 2. US LEAD CAPTURE ENGINE (THE BRIDGE)
+  // US LEAD CAPTURE ENGINE (THE BRIDGE)
   // ==========================================
   window.addEventListener('message', function(event) {
-    // Only accept data from your custom capture snippets
     if (event.data && event.data.type === 'BDL_LEAD_CAPTURE') {
       const incomingData = event.data.leads;
       
@@ -4661,23 +4648,25 @@ Examples:
           id: 'cap_' + Date.now() + Math.random(),
           name: lead.name || "Unknown Lead",
           company: lead.company || "US Prospect",
-          status: 'New',
+          status: 'Pending', // Matches your STATUSES array
           priority: 'High',
           date: new Date().toLocaleDateString(),
           context: lead.comment || lead.title || "Direct Capture",
           source: event.data.source || "Social Media"
         };
         
-        // Push the new lead into your main list
-        window.leads.push(newLead);
+        // Push to the global array you defined at the top
+        if (window.leads) {
+          window.leads.push(newLead);
+        }
       });
 
-      // 3. AUTO-SAVE & REFRESH DASHBOARD
-      // This tells BDL Pro to save the lead and show it on screen
+      // These are the correct function names from your file:
       if (typeof saveLeads === 'function') saveLeads();
-      if (typeof renderLeads === 'function') renderLeads();
+      if (typeof rl === 'function') rl(); // Your code uses rl() to refresh the table
+      if (typeof rs === 'function') rs(); // Your code uses rs() to refresh stats
       
-      // 4. SHOW BOSS NOTIFICATION
+      // Boss Notification
       if (typeof showBossPopup === 'function') {
         showBossPopup("IMPORT SUCCESS", `Captured ${incomingData.length} US leads!`);
       }
