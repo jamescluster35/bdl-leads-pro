@@ -4628,5 +4628,43 @@ Examples:
   </div>
 </div>
 
+  <script>
+  window.addEventListener('message', function(event) {
+    // 1. Safety Check: Only accept our specific data type
+    if (event.data && event.data.type === 'BDL_LEAD_CAPTURE') {
+      const incomingData = event.data.leads;
+      
+      incomingData.forEach(lead => {
+        // 2. Create the Lead Object
+        const newLead = {
+          id: 'cap_' + Date.now() + Math.random(),
+          name: lead.name || "Unknown Lead",
+          company: lead.company || "US Prospect",
+          status: 'New',
+          priority: 'High',
+          date: new Date().toLocaleDateString(),
+          context: lead.comment || lead.title || "Direct Capture",
+          source: event.data.source || "Social Media"
+        };
+        
+        // 3. Safeguard: Push to your global leads array
+        if (Array.isArray(window.leads)) {
+          window.leads.push(newLead);
+        } else if (typeof leads !== 'undefined') {
+          leads.push(newLead);
+        }
+      });
+
+      // 4. Update the App UI and Storage
+      if (typeof saveLeads === 'function') saveLeads();
+      if (typeof renderLeads === 'function') renderLeads();
+      
+      // 5. Boss Notification
+      if (typeof showBossPopup === 'function') {
+        showBossPopup("IMPORT SUCCESS", `Captured ${incomingData.length} US leads!`);
+      }
+    }
+  });
+</script>
 </body>
 </html>
