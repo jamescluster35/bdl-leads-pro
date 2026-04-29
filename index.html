@@ -319,6 +319,9 @@ function removeSender(i){if(SENDERS.length<=1){alert('Must keep at least one sen
 function renderSenderSettings(){var box=ge('sender-settings');if(!box)return;box.innerHTML='<div style="margin-bottom:8px;font-size:12px;color:#94a3b8;font-weight:600;letter-spacing:.5px">SENDER EMAILS</div>'+SENDERS.map(function(s,i){return'<div style="display:flex;align-items:center;justify-content:space-between;background:#0a0f1a;border:1px solid #1e293b;border-radius:6px;padding:7px 12px;margin-bottom:5px"><span style="color:#e2e8f0;font-size:12px">'+esc(s)+'</span><button onclick="removeSender('+i+')" style="background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.2);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer">Remove</button></div>';}).join('')+'<button onclick="addSender()" style="background:rgba(249,115,22,.1);color:#f97316;border:1px solid rgba(249,115,22,.2);border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer;width:100%;margin-top:4px">+ Add Sender Email</button>';}
 const NICHES=Object.keys(NC);
 
+// 2. Global variable declaration (Important for the Bridge)
+window.leads = JSON.parse(localStorage.getItem('bdl_leads')) || [];
+
 // Timezone map by city/state
 const TZ_MAP={
   'Boston':'America/New_York','New York':'America/New_York','NYC':'America/New_York',
