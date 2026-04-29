@@ -3988,79 +3988,35 @@ function initGmailAPI() {
   });
 }
 
-// Connect a Gmail account via OAuth
+// Connect a Gmail account via Google Identity Services (GIS)
 function connectGmailAccount(senderEmail) {
-  if (!senderEmail) {
-    flash('Please select a sender email first', 'bad');
+  if (!senderEmail) { flash('Select a sender email first', 'bad'); return; }
+  if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
+    flash('GIS not loaded — hard refresh and try again', 'bad');
     return;
   }
-  
-  console.log('🔵 Connecting Gmail account:', senderEmail);
-  flash('Connecting ' + senderEmail + '...', 'info');
-  
-  initGmailAPI().then(function() {
-    console.log('✅ Gmail API loaded successfully');
-    
-    // Check if gapi.auth2 is available
-    if (!gapi || !gapi.auth2) {
-      console.error('❌ gapi.auth2 not available');
-      flash('Gmail API not initialized. Please refresh and try again.', 'bad');
-      return;
-    }
-    
-    var authInstance = gapi.auth2.getAuthInstance();
-    if (!authInstance) {
-      console.error('❌ Auth instance not available');
-      flash('OAuth not initialized. Please refresh and try again.', 'bad');
-      return;
-    }
-    
-    console.log('🔵 Opening OAuth popup for:', senderEmail);
-    
-    authInstance.signIn({
-      login_hint: senderEmail,
-      prompt: 'select_account'
-    }).then(function(googleUser) {
-      console.log('✅ OAuth successful for:', senderEmail);
-      
-      var authResponse = googleUser.getAuthResponse(true);
-      var profile = googleUser.getBasicProfile();
-      var email = profile.getEmail();
-      
-      console.log('✅ Connected email:', email);
-      
-      // Store token info
-      gmailAccounts[email] = {
-        token: authResponse.access_token,
-        refreshToken: authResponse.id_token,
-        expiresAt: Date.now() + (authResponse.expires_in * 1000),
+  flash('Opening Google sign-in for ' + senderEmail + '...');
+  var tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GMAIL_CONFIG.CLIENT_ID,
+    scope: GMAIL_CONFIG.SCOPES,
+    hint: senderEmail,
+    callback: function(tokenResponse) {
+      if (tokenResponse.error) {
+        flash('Auth failed: ' + tokenResponse.error, 'bad');
+        return;
+      }
+      gmailAccounts[senderEmail] = {
+        token: tokenResponse.access_token,
+        expiresAt: Date.now() + ((tokenResponse.expires_in || 3600) * 1000),
         connected: true,
         lastSync: null
       };
-      
       saveGmailAccounts();
-      flash('✓ Connected ' + email);
+      flash('✓ Connected ' + senderEmail);
       renderGmailTab();
-    }).catch(function(error) {
-      console.error('❌ Gmail auth error:', error);
-      
-      // More helpful error messages
-      if (error.error === 'popup_closed_by_user') {
-        flash('Popup closed. Please try again.', 'bad');
-      } else if (error.error === 'access_denied') {
-        flash('Access denied. You must click "Allow" to connect.', 'bad');
-      } else if (error.error === 'popup_blocked_by_browser') {
-        flash('Popup blocked! Please allow popups for this site.', 'bad');
-      } else if (error.error === 'idpiframe_initialization_failed') {
-        flash('Cookie/3rd party error. Check browser settings or try incognito.', 'bad');
-      } else {
-        flash('Connection failed: ' + (error.error || error.message || 'Unknown error'), 'bad');
-      }
-    });
-  }).catch(function(error) {
-    console.error('❌ Gmail API init error:', error);
-    flash('Could not load Gmail API. Check console for details.', 'bad');
+    }
   });
+  tokenClient.requestAccessToken({ prompt: 'select_account' });
 }
 
 // Disconnect a Gmail account
