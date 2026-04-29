@@ -4634,9 +4634,22 @@ Examples:
 
 <script>
   // ==========================================
-  // US LEAD CAPTURE ENGINE (THE BRIDGE)
+  // 1. AUTO-CONNECT TO BDL PRO DATA
+  // ==========================================
+  // This part makes sure the "Bridge" can find your leads list
+  if (typeof window.leads === 'undefined') {
+    if (typeof leads !== 'undefined') {
+      window.leads = leads;
+    } else {
+      window.leads = JSON.parse(localStorage.getItem('bdl_leads')) || [];
+    }
+  }
+
+  // ==========================================
+  // 2. US LEAD CAPTURE ENGINE (THE BRIDGE)
   // ==========================================
   window.addEventListener('message', function(event) {
+    // Only accept data from your custom capture snippets
     if (event.data && event.data.type === 'BDL_LEAD_CAPTURE') {
       const incomingData = event.data.leads;
       
@@ -4652,19 +4665,16 @@ Examples:
           source: event.data.source || "Social Media"
         };
         
-        // Push to your global leads array
-        if (Array.isArray(window.leads)) {
-          window.leads.push(newLead);
-        } else if (typeof leads !== 'undefined') {
-          leads.push(newLead);
-        }
+        // Push the new lead into your main list
+        window.leads.push(newLead);
       });
 
-      // Update the App UI and Storage
+      // 3. AUTO-SAVE & REFRESH DASHBOARD
+      // This tells BDL Pro to save the lead and show it on screen
       if (typeof saveLeads === 'function') saveLeads();
       if (typeof renderLeads === 'function') renderLeads();
       
-      // Boss Notification
+      // 4. SHOW BOSS NOTIFICATION
       if (typeof showBossPopup === 'function') {
         showBossPopup("IMPORT SUCCESS", `Captured ${incomingData.length} US leads!`);
       }
