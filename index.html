@@ -319,8 +319,8 @@ function removeSender(i){if(SENDERS.length<=1){alert('Must keep at least one sen
 function renderSenderSettings(){var box=ge('sender-settings');if(!box)return;box.innerHTML='<div style="margin-bottom:8px;font-size:12px;color:#94a3b8;font-weight:600;letter-spacing:.5px">SENDER EMAILS</div>'+SENDERS.map(function(s,i){return'<div style="display:flex;align-items:center;justify-content:space-between;background:#0a0f1a;border:1px solid #1e293b;border-radius:6px;padding:7px 12px;margin-bottom:5px"><span style="color:#e2e8f0;font-size:12px">'+esc(s)+'</span><button onclick="removeSender('+i+')" style="background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.2);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer">Remove</button></div>';}).join('')+'<button onclick="addSender()" style="background:rgba(249,115,22,.1);color:#f97316;border:1px solid rgba(249,115,22,.2);border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer;width:100%;margin-top:4px">+ Add Sender Email</button>';}
 const NICHES=Object.keys(NC);
 
-// 2. Global variable declaration (Important for the Bridge)
-window.leads = JSON.parse(localStorage.getItem('bdl_leads')) || [];
+// Global alias so the Bridge script can access the live leads array
+// NOTE: This is set AFTER var leads=[] below — see saveLoc() which keeps them in sync
 
 // Timezone map by city/state
 const TZ_MAP={
@@ -346,6 +346,12 @@ const TZ_MAP={
 
 var leads=[],clients=[],deletedLeads=[],archivedLeads=[],who='',lpId=null,cvt=null,showAF=false;
 var clockInterval=null;
+// Make leads globally accessible for the Bridge receiver script
+Object.defineProperty(window, 'leads', {
+  get: function() { return leads; },
+  set: function(v) { leads = v; },
+  configurable: true
+});
 
 function ge(id){return document.getElementById(id);}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -4637,39 +4643,79 @@ Examples:
 
 <script>
   // ==========================================
-  // US LEAD CAPTURE ENGINE (THE BRIDGE)
+  // LINKEDIN LEAD CAPTURE BRIDGE
+  // Receives leads posted from your LinkedIn
+  // capture tool via postMessage
   // ==========================================
   window.addEventListener('message', function(event) {
-    if (event.data && event.data.type === 'BDL_LEAD_CAPTURE') {
-      const incomingData = event.data.leads;
-      
-      incomingData.forEach(lead => {
-        const newLead = {
-          id: 'cap_' + Date.now() + Math.random(),
-          name: lead.name || "Unknown Lead",
-          company: lead.company || "US Prospect",
-          status: 'Pending', // Matches your STATUSES array
-          priority: 'High',
-          date: new Date().toLocaleDateString(),
-          context: lead.comment || lead.title || "Direct Capture",
-          source: event.data.source || "Social Media"
-        };
-        
-        // Push to the global array you defined at the top
-        if (window.leads) {
-          window.leads.push(newLead);
-        }
-      });
+    if (!event.data || event.data.type !== 'BDL_LEAD_CAPTURE') return;
+    var incomingData = event.data.leads;
+    if (!incomingData || !incomingData.length) return;
 
-      // These are the correct function names from your file:
-      if (typeof saveLeads === 'function') saveLeads();
-      if (typeof rl === 'function') rl(); // Your code uses rl() to refresh the table
-      if (typeof rs === 'function') rs(); // Your code uses rs() to refresh stats
-      
-      // Boss Notification
-      if (typeof showBossPopup === 'function') {
-        showBossPopup("IMPORT SUCCESS", `Captured ${incomingData.length} US leads!`);
-      }
+    var t = new Date().toISOString().split('T')[0];
+    var nextId = (leads.reduce(function(mx, l) {
+      var m = String(l.id).match(/^bdl_(\d+)$/);
+      return m ? Math.max(mx, parseInt(m[1])) : mx;
+    }, 0)) + 1;
+    var nextNum = leads.reduce(function(mx, l) {
+      return Math.max(mx, l.num || 0);
+    }, 0) + 1;
+
+    var added = 0;
+    incomingData.forEach(function(lead) {
+      // Skip duplicates by email
+      var em = (lead.email || '').toLowerCase().trim();
+      if (em && leads.find(function(l) { return (l.email||'').toLowerCase()===em; })) return;
+
+      var newLead = {
+        id: 'bdl_' + nextId++,
+        num: nextNum++,
+        company: lead.company || 'LinkedIn Lead',
+        contact: lead.name || '',
+        email: lead.email || '',
+        title: lead.title || '',
+        niche: lead.niche || '',
+        status: 'Pending',
+        decisionMaker: '',
+        city: lead.city || '',
+        state: lead.state || '',
+        timezone: '',
+        followUpDate: nbiz(t, 4),
+        lastContacted: t,
+        lastSender: SENDERS[0] || '',
+        followUpCount: 0,
+        pitchSent: '',
+        painPoints: '',
+        servicesNeeded: lead.context || '',
+        notes: 'Source: ' + (event.data.source || 'LinkedIn'),
+        dealStage: 'Contacted',
+        dealValue: '',
+        outreachLog: [{
+          date: t,
+          note: 'Lead captured from ' + (event.data.source || 'LinkedIn'),
+          sender: ''
+        }],
+        contacts: lead.email ? [{
+          id: 'c_' + Date.now() + '_' + nextId,
+          name: lead.name || '',
+          email: lead.email || '',
+          title: lead.title || '',
+          priority: 'Primary',
+          status: 'Active'
+        }] : []
+      };
+
+      leads.unshift(newLead);  // Add to TOP of real leads array
+      syncLead(newLead);       // Sync to Google Sheets immediately
+      added++;
+    });
+
+    if (added > 0) {
+      saveLoc();                    // Save to localStorage (key: bdl-v11)
+      rs();                         // Refresh stats cards
+      ra();                         // Refresh action plan alerts
+      rl();                         // Refresh leads table
+      showBossCelebration(added + ' LinkedIn lead' + (added > 1 ? 's' : '') + ' captured!');
     }
   });
 </script>
