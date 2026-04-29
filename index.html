@@ -4628,13 +4628,19 @@ Examples:
   </div>
 </div>
 
+</div>
+  </div>
+</div>
+
 <script>
+  // ==========================================
+  // US LEAD CAPTURE ENGINE (THE BRIDGE)
+  // ==========================================
   window.addEventListener('message', function(event) {
-    // Safety Check: Only accept our specific data type
     if (event.data && event.data.type === 'BDL_LEAD_CAPTURE') {
-      const capturedLeads = event.data.leads;
+      const incomingData = event.data.leads;
       
-      capturedLeads.forEach(lead => {
+      incomingData.forEach(lead => {
         const newLead = {
           id: 'cap_' + Date.now() + Math.random(),
           name: lead.name || "Unknown Lead",
@@ -4654,16 +4660,19 @@ Examples:
         }
       });
 
-      // Execute your existing refresh and save functions
+      // Update the App UI and Storage
       if (typeof saveLeads === 'function') saveLeads();
       if (typeof renderLeads === 'function') renderLeads();
       
-      // Trigger your Boss notification UI
+      // Boss Notification
       if (typeof showBossPopup === 'function') {
-        showBossPopup("IMPORT SUCCESS", `Captured ${capturedLeads.length} leads from ${event.data.source || 'External Source'}`);
+        showBossPopup("IMPORT SUCCESS", `Captured ${incomingData.length} US leads!`);
       }
     }
   });
 </script>
+
+</body>
+</html>
 </body>
 </html>
