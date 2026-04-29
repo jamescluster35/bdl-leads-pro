@@ -320,8 +320,6 @@ function renderSenderSettings(){var box=ge('sender-settings');if(!box)return;box
 const NICHES=Object.keys(NC);
 
 // Global alias so the Bridge script can access the live leads array
-// NOTE: This is set AFTER var leads=[] below — see saveLoc() which keeps them in sync
-
 // Timezone map by city/state
 const TZ_MAP={
   'Boston':'America/New_York','New York':'America/New_York','NYC':'America/New_York',
@@ -346,12 +344,6 @@ const TZ_MAP={
 
 var leads=[],clients=[],deletedLeads=[],archivedLeads=[],who='',lpId=null,cvt=null,showAF=false;
 var clockInterval=null;
-// Make leads globally accessible for the Bridge receiver script
-Object.defineProperty(window, 'leads', {
-  get: function() { return leads; },
-  set: function(v) { leads = v; },
-  configurable: true
-});
 
 function ge(id){return document.getElementById(id);}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -3878,7 +3870,7 @@ function saveNewContact(){
 
 const GMAIL_CONFIG = {
   // ✅ Your Client ID is configured
-  CLIENT_ID: '981783033378-fpctuet19sr6rnt4a4oju7iks3q67ka4.apps.googleusercontent.com',
+  CLIENT_ID: '981783033378-0ethrtasbt6u2k8olq9rjqhep0qgha6t.apps.googleusercontent.com',
   
   // ✅ Your API Key is configured
   API_KEY: 'AIzaSyAbnJKG_iVS3RF8WlJVA0sSlXb18ZvwcgM',
@@ -4390,90 +4382,48 @@ function renderGmailTab() {
 function testGmailSetup() {
   var statusEl = ge('test-status');
   var resultsEl = ge('test-results');
-  
   statusEl.textContent = 'Testing...';
   statusEl.style.background = 'rgba(249,115,22,.3)';
   statusEl.style.color = '#f97316';
-  
   resultsEl.style.display = 'block';
   resultsEl.innerHTML = '<div style="color:#94a3b8;font-size:13px">Running diagnostics...</div>';
-  
+
   var results = [];
-  
-  // Test 1: Check credentials
-  console.log('🧪 Test 1: Checking credentials...');
-  if (!GMAIL_CONFIG.CLIENT_ID || GMAIL_CONFIG.CLIENT_ID.includes('YOUR_CLIENT_ID')) {
-    results.push({ok: false, msg: 'CLIENT_ID not configured'});
-  } else {
-    results.push({ok: true, msg: 'CLIENT_ID configured (' + GMAIL_CONFIG.CLIENT_ID.substring(0, 20) + '...)'});
-  }
-  
-  if (!GMAIL_CONFIG.API_KEY || GMAIL_CONFIG.API_KEY.includes('YOUR_API_KEY')) {
-    results.push({ok: false, msg: 'API_KEY not configured'});
-  } else {
-    results.push({ok: true, msg: 'API_KEY configured (' + GMAIL_CONFIG.API_KEY.substring(0, 15) + '...)'});
-  }
-  
-  // Test 2: Load Google API
-  console.log('🧪 Test 2: Loading Google API...');
-  initGmailAPI().then(function() {
-    results.push({ok: true, msg: 'Google API loaded successfully'});
-    
-    // Test 3: Check OAuth initialization
-    console.log('🧪 Test 3: Checking OAuth...');
-    if (gapi && gapi.auth2 && gapi.auth2.getAuthInstance()) {
-      results.push({ok: true, msg: 'OAuth initialized successfully'});
-    } else {
-      results.push({ok: false, msg: 'OAuth not initialized'});
-    }
-    
-    // Display results
-    var allPassed = results.every(function(r) { return r.ok; });
-    
-    statusEl.textContent = allPassed ? 'All Tests Passed' : 'Some Tests Failed';
-    statusEl.style.background = allPassed ? 'rgba(34,197,94,.3)' : 'rgba(239,68,68,.3)';
-    statusEl.style.color = allPassed ? '#22c55e' : '#ef4444';
-    
-    var html = '<div style="margin-top:10px">';
-    results.forEach(function(r) {
-      html += '<div style="padding:8px 12px;margin-bottom:5px;background:' + (r.ok ? 'rgba(34,197,94,.1)' : 'rgba(239,68,68,.1)') + ';border:1px solid ' + (r.ok ? 'rgba(34,197,94,.2)' : 'rgba(239,68,68,.2)') + ';border-radius:6px;color:' + (r.ok ? '#22c55e' : '#ef4444') + ';font-size:13px">';
-      html += (r.ok ? '✓' : '✗') + ' ' + r.msg;
-      html += '</div>';
-    });
-    
-    if (allPassed) {
-      html += '<div style="margin-top:15px;padding:12px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);border-radius:6px;color:#60a5fa;font-size:13px">';
-      html += '✓ Setup verified! You can now connect your Gmail accounts.';
-      html += '</div>';
-    } else {
-      html += '<div style="margin-top:15px;padding:12px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:6px;color:#ef4444;font-size:13px">';
-      html += '✗ Setup incomplete. Please check the errors above and refer to the setup guide.';
-      html += '</div>';
-    }
-    
-    html += '</div>';
-    resultsEl.innerHTML = html;
-    
-    console.log('🧪 Test results:', results);
-    
-  }).catch(function(error) {
-    results.push({ok: false, msg: 'Failed to load Google API: ' + error.message});
-    
-    statusEl.textContent = 'Test Failed';
-    statusEl.style.background = 'rgba(239,68,68,.3)';
-    statusEl.style.color = '#ef4444';
-    
-    var html = '<div style="margin-top:10px">';
-    results.forEach(function(r) {
-      html += '<div style="padding:8px 12px;margin-bottom:5px;background:' + (r.ok ? 'rgba(34,197,94,.1)' : 'rgba(239,68,68,.1)') + ';border:1px solid ' + (r.ok ? 'rgba(34,197,94,.2)' : 'rgba(239,68,68,.2)') + ';border-radius:6px;color:' + (r.ok ? '#22c55e' : '#ef4444') + ';font-size:13px">';
-      html += (r.ok ? '✓' : '✗') + ' ' + r.msg;
-      html += '</div>';
-    });
-    html += '</div>';
-    resultsEl.innerHTML = html;
-    
-    console.error('🧪 Test failed:', error);
+
+  // Test 1: CLIENT_ID
+  results.push(GMAIL_CONFIG.CLIENT_ID && !GMAIL_CONFIG.CLIENT_ID.includes('YOUR_CLIENT_ID')
+    ? {ok: true,  msg: 'CLIENT_ID configured (' + GMAIL_CONFIG.CLIENT_ID.substring(0,20) + '...)'}
+    : {ok: false, msg: 'CLIENT_ID not configured'});
+
+  // Test 2: API_KEY
+  results.push(GMAIL_CONFIG.API_KEY && !GMAIL_CONFIG.API_KEY.includes('YOUR_API_KEY')
+    ? {ok: true,  msg: 'API_KEY configured (' + GMAIL_CONFIG.API_KEY.substring(0,15) + '...)'}
+    : {ok: false, msg: 'API_KEY not configured'});
+
+  // Test 3: GIS loaded (synchronous — no hanging)
+  results.push(typeof google !== 'undefined' && google.accounts && google.accounts.oauth2
+    ? {ok: true,  msg: 'Google Identity Services (GIS) loaded ✓'}
+    : {ok: false, msg: 'GIS not loaded — hard refresh (Ctrl+Shift+R) and try again'});
+
+  // Show results immediately — no async fetch that can hang
+  var allPassed = results.every(function(r) { return r.ok; });
+  statusEl.textContent = allPassed ? 'All Tests Passed' : 'Some Tests Failed';
+  statusEl.style.background = allPassed ? 'rgba(34,197,94,.3)' : 'rgba(239,68,68,.3)';
+  statusEl.style.color = allPassed ? '#22c55e' : '#ef4444';
+
+  var html = '<div style="margin-top:10px">';
+  results.forEach(function(r) {
+    html += '<div style="padding:8px 12px;margin-bottom:5px;background:' +
+      (r.ok ? 'rgba(34,197,94,.1)' : 'rgba(239,68,68,.1)') +
+      ';border:1px solid ' + (r.ok ? 'rgba(34,197,94,.2)' : 'rgba(239,68,68,.2)') +
+      ';border-radius:6px;color:' + (r.ok ? '#22c55e' : '#ef4444') +
+      ';font-size:13px">' + (r.ok ? '✓' : '✗') + ' ' + r.msg + '</div>';
   });
+  html += allPassed
+    ? '<div style="margin-top:15px;padding:12px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);border-radius:6px;color:#60a5fa;font-size:13px">✓ Ready! Click Connect Account on each sender below.</div>'
+    : '<div style="margin-top:15px;padding:12px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:6px;color:#ef4444;font-size:13px">Fix the errors above then retry.</div>';
+  html += '</div>';
+  resultsEl.innerHTML = html;
 }
 
 // Initialize Gmail on app load
@@ -4706,7 +4656,7 @@ Examples:
       };
 
       leads.unshift(newLead);  // Add to TOP of real leads array
-      syncLead(newLead);       // Sync to Google Sheets immediately
+      syncLead(newLead);        // Sync to Google Sheets immediately
       added++;
     });
 
