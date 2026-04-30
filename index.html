@@ -708,7 +708,7 @@ function togaf(){
         '<button style="background:none;border:none;color:#333;cursor:pointer;font-size:18px" onclick="togaf()">✕</button>'+
       '</div>'+
       '<div class="egrid">'+
-        '<div class="ef"><label>Company *</label><div style="display:flex;gap:6px"><input id="nc" placeholder="Company name" style="flex:1" onblur="autoFillNiche()"><button type="button" id="research-btn" onclick="researchCompany()" style="background:rgba(139,92,246,.15);color:#a78bfa;border:1px solid rgba(139,92,246,.3);border-radius:7px;padding:7px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0">&#128269; Research</button></div></div>'+
+        '<div class="ef"><label>Company *</label><div style="display:flex;gap:6px"><input id="nc" placeholder="Company name" style="flex:1" onblur="autoFillNiche()"><button type="button" onclick="placesLookup()" style="background:rgba(16,185,129,.15);color:#10b981;border:1px solid rgba(16,185,129,.3);border-radius:7px;padding:7px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0" id="places-btn">&#128205; Places</button><button type="button" id="research-btn" onclick="researchCompany()" style="background:rgba(139,92,246,.15);color:#a78bfa;border:1px solid rgba(139,92,246,.3);border-radius:7px;padding:7px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0">&#128269; Research</button></div></div>'+
       '<div id="research-result-box" style="display:none;background:#0d1424;border:1px solid #1e293b;border-radius:10px;padding:12px 14px;margin-bottom:8px"></div>'+
         '<div class="ef"><label>Contact</label><input id="nct" placeholder="Name"></div>'+
         '<div class="ef"><label>Email</label><input id="ne" placeholder="email@co.com" onblur="autoFillNiche()"></div>'+
@@ -968,7 +968,7 @@ function renderLp(){
     // Core fields
     '<div class="lp-sec"><h3>📋 Lead Info</h3>'+
       '<div class="lp-grid">'+
-        '<div class="lp-f"><label>Company</label><input id="lp-co" value="'+esc(l.company)+'"></div>'+
+        '<div class="lp-f lp-full"><label>Company</label><div style="display:flex;gap:5px"><input id="lp-co" value="'+esc(l.company)+'" style="flex:1"><button type="button" onclick="placesLookupPanel()" style="background:rgba(16,185,129,.15);color:#10b981;border:1px solid rgba(16,185,129,.3);border-radius:6px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0">📍 Places Lookup</button></div></div>'+
         '<div class="lp-f"><label>Contact Name</label><input id="lp-ct" value="'+esc(l.contact||'')+'"></div>'+
         '<div class="lp-f"><label>Title / Role</label><input id="lp-title" placeholder="e.g. CEO, VP Sales" value="'+esc(l.title||'')+'"></div>'+
         '<div class="lp-f"><label>City</label><input id="lp-city" value="'+esc(l.city||'')+'"></div>'+
@@ -2900,6 +2900,123 @@ function researchCompany(){
 }
 
 
+// ── GOOGLE PLACES AUTO-FILL ──────────────────────────────────────────────
+var PLACES_API_KEY = 'AIzaSyAbnJKG_iVS3RF8WlJVA0sSlXb18ZvwcgM'; // same key as GMAIL_CONFIG
+
+function placesLookup() {
+  var company = (ge('nc') && ge('nc').value.trim()) || '';
+  var city = (ge('ncity') && ge('ncity').value.trim()) || '';
+  var state = (ge('nstate') && ge('nstate').value.trim()) || '';
+  if (!company) { flash('Enter company name first', 'bad'); return; }
+  var query = company + (city ? ' ' + city : '') + (state ? ' ' + state : '');
+  var btn = ge('places-btn');
+  if (btn) { btn.textContent = '⏳ Loading...'; btn.disabled = true; }
+  doPlacesLookup(query, function(result) {
+    if (btn) { btn.textContent = '📍 Places'; btn.disabled = false; }
+    if (!result) { flash('No result found — try adding city/state', 'bad'); return; }
+    // Auto-fill form fields
+    if (result.city && ge('ncity') && !ge('ncity').value) ge('ncity').value = result.city;
+    if (result.state && ge('nstate') && !ge('nstate').value) ge('nstate').value = result.state;
+    if (result.phone && ge('n-phone')) ge('n-phone').value = result.phone;
+    if (result.website && ge('n-website')) ge('n-website').value = result.website;
+    if (result.reviewQuote && ge('n-quote')) ge('n-quote').value = result.reviewQuote;
+    if (result.painPoints && ge('n-quote') && !ge('n-quote').value) ge('n-quote').value = result.painPoints;
+    // Show result box
+    var box = ge('research-result-box');
+    if (box) {
+      box.style.display = 'block';
+      box.innerHTML =
+        '<div style="font-size:10px;font-weight:700;color:#10b981;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">📍 Google Places Result</div>'+
+        '<div style="font-size:12px;color:#e2e8f0;margin-bottom:4px"><b>'+esc(result.name||company)+'</b> '+
+          (result.rating ? '<span style="color:#eab308">'+result.rating+'⭐ ('+result.reviewCount+' reviews)</span>' : '')+'</div>'+
+        (result.address ? '<div style="font-size:11px;color:#94a3b8;margin-bottom:4px">📍 '+esc(result.address)+'</div>' : '')+
+        (result.phone ? '<div style="font-size:11px;color:#94a3b8;margin-bottom:4px">📞 '+esc(result.phone)+'</div>' : '')+
+        (result.website ? '<div style="font-size:11px;color:#60a5fa;margin-bottom:4px">🌐 '+esc(result.website)+'</div>' : '')+
+        (result.reviewQuote ? '<div style="font-size:11px;color:#fca5a5;margin-top:6px;padding:6px 8px;background:rgba(239,68,68,.08);border-radius:6px;border-left:2px solid #ef4444">💬 "'+esc(result.reviewQuote)+'"</div>' : '')+
+        '<div style="font-size:10px;color:#334155;margin-top:6px">Fields auto-filled above ↑</div>';
+    }
+    flash('✓ Places data loaded!');
+  });
+}
+
+function placesLookupPanel() {
+  var company = (ge('lp-co') && ge('lp-co').value.trim()) || '';
+  var city = (ge('lp-city') && ge('lp-city').value.trim()) || '';
+  var state = (ge('lp-state') && ge('lp-state').value.trim()) || '';
+  if (!company) { flash('Enter company name first', 'bad'); return; }
+  var query = company + (city ? ' ' + city : '') + (state ? ' ' + state : '');
+  flash('Looking up ' + company + '...');
+  doPlacesLookup(query, function(result) {
+    if (!result) { flash('No result found', 'bad'); return; }
+    if (result.city && ge('lp-city') && !ge('lp-city').value) ge('lp-city').value = result.city;
+    if (result.state && ge('lp-state') && !ge('lp-state').value) ge('lp-state').value = result.state;
+    if (result.phone && ge('lp-phone')) ge('lp-phone').value = result.phone;
+    if (result.website && ge('lp-website')) ge('lp-website').value = result.website;
+    if (result.reviewQuote && ge('lp-quote')) ge('lp-quote').value = result.reviewQuote;
+    if (result.painPoints && ge('lp-pp') && !ge('lp-pp').value) ge('lp-pp').value = result.painPoints;
+    flash('✓ Places data loaded for ' + company + '!');
+  });
+}
+
+function doPlacesLookup(query, callback) {
+  // Step 1: Search for place
+  var searchUrl = 'https://places.googleapis.com/v1/places:searchText';
+  fetch(searchUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Goog-Api-Key': PLACES_API_KEY,
+      'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.addressComponents,places.reviews'
+    },
+    body: JSON.stringify({ textQuery: query, maxResultCount: 1 })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (!data.places || !data.places.length) { callback(null); return; }
+    var place = data.places[0];
+
+    // Extract city and state from address components
+    var city = '', state = '';
+    (place.addressComponents || []).forEach(function(comp) {
+      if (comp.types && comp.types.indexOf('locality') >= 0) city = comp.longText || '';
+      if (comp.types && comp.types.indexOf('administrative_area_level_1') >= 0) state = comp.shortText || '';
+    });
+
+    // Extract best negative review
+    var reviewQuote = '';
+    var painPoints = '';
+    var reviews = place.reviews || [];
+    // Find lowest rated review with text
+    var negReviews = reviews.filter(function(r) { return r.rating <= 3 && r.text && r.text.text; });
+    negReviews.sort(function(a, b) { return a.rating - b.rating; });
+    if (negReviews.length) {
+      var best = negReviews[0];
+      var txt = best.text.text;
+      reviewQuote = txt.length > 120 ? txt.substring(0, 120) + '...' : txt;
+      painPoints = reviewQuote;
+    }
+
+    var result = {
+      name: place.displayName && place.displayName.text ? place.displayName.text : query,
+      address: place.formattedAddress || '',
+      phone: place.nationalPhoneNumber || '',
+      website: place.websiteUri ? place.websiteUri.replace(/\/$/, '') : '',
+      rating: place.rating || 0,
+      reviewCount: place.userRatingCount || 0,
+      city: city,
+      state: state,
+      reviewQuote: reviewQuote,
+      painPoints: painPoints
+    };
+    callback(result);
+  })
+  .catch(function(err) {
+    console.error('Places API error:', err);
+    flash('Places lookup failed: ' + err.message, 'bad');
+    callback(null);
+  });
+}
+
 // ── ASK MAPS BULK IMPORTER ────────────────────────────────────────────────
 function showAskMapsImport(){
   var ex=document.getElementById('askmaps-panel');if(ex)ex.remove();
@@ -3903,7 +4020,124 @@ function renderDash(){
   html+='</div>'; // end location card
 
   html+='</div>';
-  da.innerHTML=html;
+  // ── REVENUE TRACKER ──────────────────────────────────
+  var revenueHtml = buildRevenueChart();
+  da.innerHTML = html + revenueHtml;
+}
+
+function buildRevenueChart() {
+  // Collect revenue data by month from closed leads
+  var monthlyRev = {};
+  var monthlyPipeline = {};
+  var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  leads.forEach(function(l) {
+    var val = parseFloat(l.dealValue) || 0;
+    if (!val) return;
+    var date = l.lastContacted || l.followUpDate || '';
+    if (!date) return;
+    var parts = date.split('-');
+    if (parts.length < 2) return;
+    var key = parts[0] + '-' + parts[1]; // YYYY-MM
+    var label = MONTHS[parseInt(parts[1])-1] + ' ' + parts[0].slice(2);
+
+    if (l.dealStage === 'Closed Won') {
+      monthlyRev[key] = (monthlyRev[key] || {label:label, rev:0, count:0});
+      monthlyRev[key].rev += val;
+      monthlyRev[key].count++;
+    } else if (['Contacted','Sample Sent','Negotiating'].indexOf(l.dealStage) >= 0) {
+      monthlyPipeline[key] = (monthlyPipeline[key] || 0) + val;
+    }
+  });
+
+  // Last 6 months
+  var now = new Date();
+  var months6 = [];
+  for (var i = 5; i >= 0; i--) {
+    var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    var k = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    var lbl = MONTHS[d.getMonth()] + ' ' + String(d.getFullYear()).slice(2);
+    months6.push({ key: k, label: lbl });
+  }
+
+  var totalRev = Object.values(monthlyRev).reduce(function(s,m){return s+m.rev;},0);
+  var totalPipeline = leads.filter(function(l){return l.dealStage!=='Closed Lost';})
+    .reduce(function(s,l){return s+(parseFloat(l.dealValue)||0);},0);
+  var closedWon = leads.filter(function(l){return l.dealStage==='Closed Won';}).length;
+  var maxVal = Math.max.apply(null, months6.map(function(m){
+    return Math.max(
+      (monthlyRev[m.key]||{rev:0}).rev,
+      monthlyPipeline[m.key]||0
+    );
+  }).concat([1]));
+
+  var card = 'background:#0a0e1a;border:1px solid #1a2035;border-radius:12px;padding:16px;';
+
+  var html = '<div style="'+card+'margin-top:12px;grid-column:1/-1">';
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">';
+  html += '<span style="font-size:13px;font-weight:800;color:#e2e8f0">💰 Revenue Tracker</span>';
+  html += '<div style="display:flex;gap:16px">';
+  html += '<div style="text-align:right"><div style="font-size:18px;font-weight:900;color:#22c55e">$'+totalRev.toLocaleString()+'</div><div style="font-size:10px;color:#334155">Total Closed</div></div>';
+  html += '<div style="text-align:right"><div style="font-size:18px;font-weight:900;color:#f97316">$'+totalPipeline.toLocaleString()+'</div><div style="font-size:10px;color:#334155">Pipeline Value</div></div>';
+  html += '<div style="text-align:right"><div style="font-size:18px;font-weight:900;color:#a78bfa">'+closedWon+'</div><div style="font-size:10px;color:#334155">Deals Won</div></div>';
+  html += '</div></div>';
+
+  // Bar chart
+  html += '<div style="display:flex;align-items:flex-end;gap:8px;height:120px;padding:0 4px">';
+  months6.forEach(function(m) {
+    var rev = (monthlyRev[m.key]||{rev:0}).rev;
+    var pipe = monthlyPipeline[m.key] || 0;
+    var revH = maxVal > 0 ? Math.round((rev/maxVal)*100) : 0;
+    var pipeH = maxVal > 0 ? Math.round((pipe/maxVal)*100) : 0;
+    html += '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">';
+    // Labels on top
+    if (rev > 0) html += '<div style="font-size:9px;color:#22c55e;font-weight:700">$'+rev+'</div>';
+    else if (pipe > 0) html += '<div style="font-size:9px;color:#f97316;font-weight:600">$'+pipe+'</div>';
+    else html += '<div style="font-size:9px;color:#1e293b">—</div>';
+    // Bars
+    html += '<div style="width:100%;display:flex;gap:2px;align-items:flex-end;height:80px">';
+    if (rev > 0) html += '<div style="flex:1;height:'+Math.max(revH,4)+'%;background:linear-gradient(180deg,#22c55e,#16a34a);border-radius:3px 3px 0 0;min-height:4px"></div>';
+    if (pipe > 0) html += '<div style="flex:1;height:'+Math.max(pipeH,4)+'%;background:linear-gradient(180deg,#f97316,#ea580c);border-radius:3px 3px 0 0;min-height:4px;opacity:.6"></div>';
+    if (!rev && !pipe) html += '<div style="flex:1;height:4px;background:#111827;border-radius:3px"></div>';
+    html += '</div>';
+    // Month label
+    html += '<div style="font-size:9px;color:#334155;white-space:nowrap">'+m.label+'</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // Legend
+  html += '<div style="display:flex;gap:16px;margin-top:10px;padding-top:10px;border-top:1px solid #111827">';
+  html += '<div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;background:#22c55e;border-radius:2px"></div><span style="font-size:11px;color:#475569">Closed Won Revenue</span></div>';
+  html += '<div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;background:#f97316;border-radius:2px;opacity:.6"></div><span style="font-size:11px;color:#475569">Pipeline Value</span></div>';
+
+  // Deal stage breakdown
+  html += '</div>';
+
+  // Intent trigger breakdown (new field)
+  var triggerMap = {};
+  leads.forEach(function(l) {
+    if (l.intentTrigger) triggerMap[l.intentTrigger] = (triggerMap[l.intentTrigger]||0)+1;
+  });
+  var triggers = Object.keys(triggerMap).sort(function(a,b){return triggerMap[b]-triggerMap[a];}).slice(0,5);
+
+  if (triggers.length) {
+    html += '<div style="margin-top:14px;padding-top:12px;border-top:1px solid #111827">';
+    html += '<div style="font-size:10px;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">🎯 Top Intent Triggers</div>';
+    html += '<div style="display:flex;flex-wrap:wrap;gap:6px">';
+    var trigColors = ['#f97316','#eab308','#3b82f6','#a855f7','#10b981'];
+    triggers.forEach(function(t, i) {
+      html += '<div style="background:rgba(255,255,255,.04);border:1px solid #1e293b;border-radius:8px;padding:7px 12px;display:flex;align-items:center;gap:8px">';
+      html += '<div style="width:8px;height:8px;border-radius:50%;background:'+trigColors[i%5]+'"></div>';
+      html += '<span style="font-size:12px;color:#94a3b8">'+t+'</span>';
+      html += '<span style="font-size:12px;font-weight:700;color:'+trigColors[i%5]+'">'+triggerMap[t]+'</span>';
+      html += '</div>';
+    });
+    html += '</div></div>';
+  }
+
+  html += '</div>';
+  return html;
 }
 
 // ── CONTACT PANEL FUNCTIONS ───────────────────────────
@@ -4417,132 +4651,6 @@ function gmailFetch(token, path, params) {
   }
   return fetch(url, { headers: { 'Authorization': 'Bearer ' + token } })
     .then(function(r) { return r.json(); });
-}
-
-function isTokenExpired(account) {
-  return !account.expiresAt || Date.now() >= account.expiresAt;
-}
-
-function scanAllGmailAccounts() {
-  var connected = Object.keys(gmailAccounts).filter(function(e) {
-    return gmailAccounts[e] && gmailAccounts[e].connected;
-  });
-  if (!connected.length) { flash('No Gmail accounts connected — go to Gmail tab', 'bad'); return; }
-  ge('sdot').style.background = '#3b82f6';
-  ge('stxt').textContent = 'Scanning ' + connected.length + ' accounts...';
-  var total = 0, done = 0;
-  connected.forEach(function(email) {
-    scanGmailAccount(email).then(function(n) {
-      total += n; done++;
-      if (done === connected.length) {
-        ge('sdot').style.background = '#22c55e';
-        ge('stxt').textContent = 'Ready';
-        if (total > 0) { flash('✓ Found ' + total + ' new replies!'); renderAll(); }
-        else flash('No new replies found');
-      }
-    }).catch(function(err) {
-      done++;
-      console.error('Scan error ' + email + ':', err);
-      if (done === connected.length) {
-        ge('sdot').style.background = '#22c55e';
-        ge('stxt').textContent = 'Ready';
-      }
-    });
-  });
-}
-
-function scanGmailAccount(email) {
-  return new Promise(function(resolve, reject) {
-    var acc = gmailAccounts[email];
-    if (!acc || !acc.connected) { reject('Not connected'); return; }
-    if (isTokenExpired(acc)) {
-      flash(email + ' token expired — reconnect in Gmail tab', 'bad');
-      reject('Expired'); return;
-    }
-    var token = acc.token;
-    var after = new Date(acc.lastSync || (Date.now() - 7*24*60*60*1000)).toISOString().split('T')[0];
-    gmailFetch(token, 'users/me/messages', { q: 'in:inbox after:' + after + ' -from:me', maxResults: 50 })
-      .then(function(data) {
-        var msgs = data.messages || [];
-        if (!msgs.length) { acc.lastSync = Date.now(); saveGmailAccounts(); resolve(0); return; }
-        var processed = 0, replies = 0;
-        msgs.forEach(function(msg) {
-          gmailFetch(token, 'users/me/messages/' + msg.id, { format: 'metadata', metadataHeaders: 'From,Subject' })
-            .then(function(full) {
-              var headers = (full.payload && full.payload.headers) || [];
-              var from = (headers.find(function(h) { return h.name === 'From'; }) || {}).value || '';
-              var subject = (headers.find(function(h) { return h.name === 'Subject'; }) || {}).value || '';
-              // Detect bounces
-              var isBounce = from.toLowerCase().indexOf('mailer-daemon') >= 0 ||
-                             from.toLowerCase().indexOf('postmaster') >= 0 ||
-                             subject.toLowerCase().indexOf('undeliverable') >= 0 ||
-                             subject.toLowerCase().indexOf('delivery failed') >= 0 ||
-                             subject.toLowerCase().indexOf('returned mail') >= 0;
-              var matched = findLeadByEmail(isBounce ? subject : from);
-              if (matched) {
-                if (isBounce) {
-                  // Mark as bounced
-                  leads = leads.map(function(l) {
-                    if (String(l.id) !== String(matched.id)) return l;
-                    return Object.assign({}, l, {
-                      status: 'Bounced',
-                      outreachLog: (l.outreachLog || []).concat([{
-                        date: today(), note: 'Email bounced: ' + subject, sender: email
-                      }])
-                    });
-                  });
-                  var u = leads.find(function(l) { return String(l.id) === String(matched.id); });
-                  if (u) syncLead(u);
-                } else {
-                  // Mark as replied
-                  leads = leads.map(function(l) {
-                    if (String(l.id) !== String(matched.id)) return l;
-                    return Object.assign({}, l, {
-                      status: 'Replied', lastContacted: today(),
-                      outreachLog: (l.outreachLog || []).concat([{
-                        date: today(), note: 'Reply received: ' + subject, sender: email
-                      }])
-                    });
-                  });
-                  var u2 = leads.find(function(l) { return String(l.id) === String(matched.id); });
-                  if (u2) syncLead(u2);
-                }
-                replies++;
-              }
-              processed++;
-              if (processed === msgs.length) { acc.lastSync = Date.now(); saveGmailAccounts(); saveLoc(); resolve(replies); }
-            }).catch(function() {
-              processed++;
-              if (processed === msgs.length) { acc.lastSync = Date.now(); saveGmailAccounts(); resolve(replies); }
-            });
-        });
-      }).catch(reject);
-  });
-}
-
-function findLeadByEmail(emailAddress) {
-  var m = emailAddress.match(/<(.+?)>/);
-  var clean = (m ? m[1] : emailAddress).toLowerCase().trim();
-  return leads.find(function(lead) {
-    if (getPrimaryEmail(lead) && getPrimaryEmail(lead).toLowerCase() === clean) return true;
-    return (lead.contacts || []).some(function(c) { return c.email && c.email.toLowerCase() === clean; });
-  });
-}
-
-function processGmailReply(lead, replyData) {
-  var d = today();
-  leads = leads.map(function(l) {
-    if (String(l.id) !== String(lead.id)) return l;
-    return Object.assign({}, l, {
-      status: 'Replied', lastContacted: d, lastSender: replyData.senderAccount,
-      outreachLog: (l.outreachLog || []).concat([{
-        date: d, note: 'Reply: ' + (replyData.subject || 'No subject'), sender: replyData.senderAccount
-      }])
-    });
-  });
-  saveLoc();
-  var u = leads.find(function(l) { return String(l.id) === String(lead.id); });
-  if (u) syncLead(u);
 }
 
 // Initialize Gmail on app load
