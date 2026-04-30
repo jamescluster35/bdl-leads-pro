@@ -132,7 +132,7 @@
       </div>
       <div id="alerts"></div>
       <div class="filters">
-        <input id="srch" placeholder="🔍 Search company, contact, #…" oninput="rl()">
+        <input id="srch" placeholder="🔍 Search company, contact, #…" oninput="debounceSearch()">
         <select id="fst" onchange="rl()">
           <option value="All">All Status</option>
           <option>Pending</option><option>Sent</option><option>Warm Lead</option><option>Bounced</option><option>Replied</option>
@@ -152,9 +152,9 @@
           <option value="skinnerdonald">Skinner</option>
           <option value="michaelbrauns">Michael</option>
         </select>
-        <button class="addb" onclick="togaf()">+ Add Lead</button>
+        <input id="f-trigger" list="trigger-list" placeholder="All Triggers" oninput="rl()" style="background:#111;border:1px solid #1f1f1f;border-radius:var(--rx);padding:7px 11px;color:var(--text);outline:none;width:130px">        <datalist id="trigger-list"><option value="Billing Issues"><option value="Maintenance Lag"><option value="Automated Loop Failures"><option value="Communication Gap"><option value="No Response"><option value="Poor Reviews"><option value="High Turnover"></datalist>        <button class="addb" onclick="togaf()">+ Add Lead</button>
         <button class="addb" style="background:linear-gradient(135deg,#3b82f6,#6366f1);margin-left:6px" onclick="trigImport()">⬆ Import CSV</button>
-        <button class="addb" style="background:linear-gradient(135deg,#0ea5e9,#6366f1);margin-left:6px" onclick="showQuickImport()">⚡ Quick Emails</button>
+        <button class="addb" style="background:linear-gradient(135deg,#0ea5e9,#6366f1);margin-left:6px" onclick="showQuickImport()">⚡ Quick Emails</button>        <button class="addb" style="background:linear-gradient(135deg,#10b981,#059669);margin-left:6px" onclick="showAskMapsImport()">📍 Ask Maps</button>
         <input type="file" id="csvFileIn" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleImport(event)">
       </div>
       
@@ -686,7 +686,7 @@ function gf(){
     if(pri==='replied'&&l.status!=='Replied')return false;
     if(pri==='nodm'&&l.decisionMaker==='Yes')return false;
     if(pri==='dm'&&l.decisionMaker!=='Yes')return false;
-    var fsender=ge('fsender')?ge('fsender').value:'';
+    var ftrigger=ge('f-trigger')?ge('f-trigger').value.trim().toLowerCase():'';    if(ftrigger&&!(l.intentTrigger&&l.intentTrigger.toLowerCase().indexOf(ftrigger)>=0))return false;    var fsender=ge('fsender')?ge('fsender').value:'';
     if(fsender&&!(l.lastSender&&l.lastSender.indexOf(fsender)>=0))return false;
     var ffrom=ge('f-date-from')&&ge('f-date-from').value;
     var fto=ge('f-date-to')&&ge('f-date-to').value;
@@ -718,7 +718,7 @@ function togaf(){
         '<div class="ef"><label>Status</label><select id="ns">'+STATUSES.map(function(s){return'<option>'+s+'</option>';}).join('')+'</select></div>'+
         '<div class="ef"><label>DM?</label><select id="nd"><option value="">Unknown</option><option>Yes</option><option>No</option></select></div>'+
         '<div class="ef"><label>Sender</label><select id="ns-sender">'+SENDERS.map(function(s){return'<option value="'+esc(s)+'">'+esc(s.split("@")[0])+'</option>';}).join('')+'</select></div>'+
-        '<div class="ef"><label>Notes</label><input id="nt" placeholder="Notes…"></div>'+
+        '<div class="ef"><label>Sub-Niche</label><input id="n-subniche" placeholder="e.g. Luxury Condo"></div>'+        '<div class="ef"><label>Intent Trigger</label><input id="n-trigger" placeholder="e.g. Billing Issues"></div>'+        '<div class="ef"><label>Phone</label><input id="n-phone" placeholder="(555) 000-0000"></div>'+        '<div class="ef"><label>Website</label><input id="n-website" placeholder="company.com"></div>'+        '<div class="ef"><label>LinkedIn URL</label><input id="n-linkedin" placeholder="linkedin.com/in/..."></div>'+        '<div class="ef"><label>Evidence Link</label><input id="n-evidence" placeholder="Google Maps link"></div>'+        '<div class="ef"><label>Review Quote</label><input id="n-quote" placeholder="Key pain point quote"></div>'+        '<div class="ef"><label>Notes</label><input id="nt" placeholder="Notes…"></div>'+
       '</div>'+
       '<button class="sbtn" onclick="addLead()">Save Lead</button>'+
       '<button class="cbtn" onclick="togaf()">Cancel</button>'+
@@ -734,10 +734,12 @@ function addLead(){
   var contacts=em?[{id:String(Date.now())+'_0',name:ct,email:em,title:'',priority:'Primary',status:'Active'}]:[];
   var nextBdl=leads.reduce(function(max,l){var m=String(l.id).match(/^bdl_(\d+)$/);return m?Math.max(max,parseInt(m[1])):max;},0)+1;
   var selSender=ge('ns-sender')&&ge('ns-sender').value?ge('ns-sender').value:(SENDERS[0]||'');
-var nl={id:'bdl_'+nextBdl,num:mn+1,company:co,contact:ct,email:em,title:'',contacts:contacts,niche:ge('nn').value,status:ge('ns').value,dealStage:'Contacted',dealValue:'',decisionMaker:ge('nd').value,notes:ge('nt').value,city:city,state:state,timezone:tz||'',followUpDate:nbiz(lc,4),lastContacted:lc,lastSender:selSender,followUpCount:1,pitchSent:'',painPoints:'',servicesNeeded:'',outreachLog:[{date:lc,note:'Lead added — initial pitch',sender:selSender}]};
+var nl={id:'bdl_'+nextBdl,num:mn+1,company:co,contact:ct,email:em,title:'',contacts:contacts,niche:ge('nn').value,status:ge('ns').value,dealStage:'Contacted',dealValue:'',decisionMaker:ge('nd').value,notes:ge('nt').value,subNiche:ge('n-subniche')?ge('n-subniche').value:'',intentTrigger:ge('n-trigger')?ge('n-trigger').value:'',linkedinUrl:ge('n-linkedin')?ge('n-linkedin').value:'',evidenceLink:ge('n-evidence')?ge('n-evidence').value:'',reviewQuote:ge('n-quote')?ge('n-quote').value:'',phone:ge('n-phone')?ge('n-phone').value:'',website:ge('n-website')?ge('n-website').value:'',city:city,state:state,timezone:tz||'',followUpDate:nbiz(lc,4),lastContacted:lc,lastSender:selSender,followUpCount:1,pitchSent:'',painPoints:'',servicesNeeded:'',intentTrigger:'',evidenceLink:'',subNiche:'',linkedinUrl:'',reviewQuote:'',phone:'',website:'',outreachLog:[{date:lc,note:'Lead added — initial pitch',sender:selSender}]};
   leads.unshift(nl);saveLoc();showAF=false;ge('afarea').innerHTML='';renderAll();flash('✓ Lead added!');syncLead(nl);
 }
 
+var _srchTimer=null;
+function debounceSearch(){clearTimeout(_srchTimer);_srchTimer=setTimeout(rl,220);}
 function rl(){
   // Don't call rs() and ra() here - renderAll() already does it
   var filt=sortLeads(gf());
@@ -991,7 +993,7 @@ function renderLp(){
     '<div class="lp-sec"><h3>📝 Notes & Strategy</h3>'+
       '<div class="lp-grid">'+
         '<div class="lp-f lp-full"><label>Notes</label><textarea id="lp-no" rows="2">'+esc(l.notes||'')+'</textarea></div>'+
-        '<div class="lp-f lp-full"><label>Pain Points</label><textarea id="lp-pp" rows="2">'+esc(l.painPoints||'')+'</textarea></div>'+
+        '<div class="lp-f"><label>Sub-Niche</label><input id="lp-subniche" value="'+esc(l.subNiche||'')+'" placeholder="e.g. Luxury Condo"></div>'+        '<div class="lp-f"><label>Intent Trigger</label><input id="lp-trigger" value="'+esc(l.intentTrigger||'')+'" placeholder="e.g. Billing Issues"></div>'+        '<div class="lp-f"><label>Phone</label><input id="lp-phone" value="'+esc(l.phone||'')+'" placeholder="(555) 000-0000"></div>'+        '<div class="lp-f"><label>Website</label><input id="lp-website" value="'+esc(l.website||'')+'" placeholder="company.com"></div>'+        '<div class="lp-f lp-full"><label>LinkedIn URL</label><input id="lp-linkedin" value="'+esc(l.linkedinUrl||'')+'" placeholder="linkedin.com/in/..."></div>'+        '<div class="lp-f lp-full"><label>Evidence Link</label><input id="lp-evidence" value="'+esc(l.evidenceLink||'')+'" placeholder="Google Maps/Yelp link"></div>'+        '<div class="lp-f lp-full"><label>Review Quote</label><textarea id="lp-quote" rows="2">'+esc(l.reviewQuote||'')+'</textarea></div>'+        '<div class="lp-f lp-full"><label>Pain Points</label><textarea id="lp-pp" rows="2">'+esc(l.painPoints||'')+'</textarea></div>'+
         '<div class="lp-f lp-full"><label>Services Needed</label><textarea id="lp-sv" rows="2">'+esc(l.servicesNeeded||'')+'</textarea></div>'+
         '<div class="lp-f lp-full"><label>Pitch Sent</label><textarea id="lp-pt" rows="2">'+esc(l.pitchSent||'')+'</textarea></div>'+
       '</div></div>'+
@@ -1034,7 +1036,7 @@ function lpSave(){
     dealValue:ge('lp-dv')?ge('lp-dv').value:(x.dealValue||''),
     lastContacted:lcDate,followUpDate:fuDate,
     followUpCount:x.outreachLog?x.outreachLog.length:0,
-    notes:ge('lp-no').value,painPoints:ge('lp-pp').value,servicesNeeded:ge('lp-sv').value,pitchSent:ge('lp-pt').value,
+    notes:ge('lp-no').value,painPoints:ge('lp-pp').value,servicesNeeded:ge('lp-sv').value,pitchSent:ge('lp-pt').value,subNiche:ge('lp-subniche')?ge('lp-subniche').value:(x.subNiche||''),intentTrigger:ge('lp-trigger')?ge('lp-trigger').value:(x.intentTrigger||''),linkedinUrl:ge('lp-linkedin')?ge('lp-linkedin').value:(x.linkedinUrl||''),evidenceLink:ge('lp-evidence')?ge('lp-evidence').value:(x.evidenceLink||''),reviewQuote:ge('lp-quote')?ge('lp-quote').value:(x.reviewQuote||''),phone:ge('lp-phone')?ge('lp-phone').value:(x.phone||''),website:ge('lp-website')?ge('lp-website').value:(x.website||''),
   });});
   saveLoc();rl();renderLp();flash('✓ Saved!');var u=leads.find(function(x){return String(x.id)===String(lpId);});if(u)syncLead(u);
 }
@@ -2898,7 +2900,104 @@ function researchCompany(){
 }
 
 
-// ── AUTO-RELOAD WHEN PAGE BECOMES VISIBLE ─────────────
+// ── ASK MAPS BULK IMPORTER ────────────────────────────────────────────────
+function showAskMapsImport(){
+  var ex=document.getElementById('askmaps-panel');if(ex)ex.remove();
+  var panel=document.createElement('div');
+  panel.id='askmaps-panel';
+  panel.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:250;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px)';
+  panel.innerHTML='<div style="background:#0a0a0a;border:1px solid #10b981;border-radius:16px;width:580px;max-width:95vw;max-height:88vh;display:flex;flex-direction:column">'+
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #111">'+
+      '<div><div style="font-size:14px;font-weight:800;color:#10b981">📍 Ask Maps Bulk Import</div>'+
+      '<div style="font-size:11px;color:#475569;margin-top:2px">Paste Ask Maps results → AI extracts all leads automatically</div></div>'+
+      '<button onclick="document.getElementById(\'askmaps-panel\').remove()" style="background:none;border:none;color:#475569;font-size:18px;cursor:pointer">✕</button>'+
+    '</div>'+
+    '<div style="padding:16px 18px;flex:1;overflow-y:auto">'+
+      '<label style="font-size:11px;color:#475569;font-weight:700;display:block;margin-bottom:6px">PASTE ASK MAPS RESULT</label>'+
+      '<textarea id="am-text" rows="12" style="width:100%;background:#111;border:1px solid #1e293b;border-radius:8px;padding:10px 12px;color:#e2e8f0;font-size:12px;outline:none;resize:vertical;box-sizing:border-box;line-height:1.6" placeholder="Paste the full Ask Maps response here..."></textarea>'+
+      '<div style="margin-top:10px;padding:10px 12px;background:#0d1424;border:1px solid #1e293b;border-radius:8px">'+
+        '<div style="font-size:11px;color:#475569;font-weight:700;margin-bottom:5px">NICHE FOR ALL LEADS</div>'+
+        '<input id="am-niche" list="niche-list" placeholder="Type or select niche..." style="width:100%;background:#111;border:1px solid #1e293b;border-radius:7px;padding:7px 10px;color:#e2e8f0;font-size:12px;outline:none;box-sizing:border-box">'+
+      '</div>'+
+      '<div id="am-status" style="margin-top:8px;font-size:12px;color:#475569;min-height:18px"></div>'+
+    '</div>'+
+    '<div style="padding:12px 18px;border-top:1px solid #111;display:flex;gap:8px">'+
+      '<button onclick="runAskMapsImport()" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:12px;font-weight:800;cursor:pointer">📍 Extract & Import Leads</button>'+
+      '<button onclick="document.getElementById(\'askmaps-panel\').remove()" style="background:#111;color:#475569;border:1px solid #1f1f1f;border-radius:8px;padding:9px 14px;font-size:12px;cursor:pointer">Cancel</button>'+
+    '</div></div>';
+  document.body.appendChild(panel);
+  setTimeout(function(){var t=document.getElementById('am-text');if(t)t.focus();},100);
+}
+
+function runAskMapsImport(){
+  var txt=(document.getElementById('am-text')||{}).value||'';
+  var niche=(document.getElementById('am-niche')||{}).value||'';
+  if(!txt.trim()){flash('Paste Ask Maps result first','bad');return;}
+  var key=localStorage.getItem('bdl-gemini-key');
+  if(!key){flash('Add Gemini API key in AI panel first','bad');return;}
+  var statusEl=document.getElementById('am-status');
+  if(statusEl)statusEl.innerHTML='<span style="color:#a78bfa">AI extracting leads…</span>';
+  var t=today();
+  var nextId=leads.reduce(function(mx,l){var m=String(l.id).match(/^bdl_(\d+)$/);return m?Math.max(mx,parseInt(m[1])):mx;},0)+1;
+  var nextNum=leads.reduce(function(mx,l){return Math.max(mx,l.num||0);},0)+1;
+  var prompt='You are a B2B lead extraction assistant. Parse this Ask Maps result and extract ALL businesses. Return ONLY a valid JSON array, no markdown. Each object must have: company, phone, website, address, city, state (2-letter), rating (number), reviewQuote (key negative quote), intentTrigger (one of: Billing Issues/Maintenance Lag/Communication Gap/Automated Loop Failures/Poor Reviews/No Response/High Turnover), painPoints (1-2 sentence summary), subNiche (specific sub-niche or empty). Niche: '+(niche||'Unknown')+'. Today: '+t+'. Data: '+txt;
+  fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+key,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.1,maxOutputTokens:4000}})
+  }).then(function(r){return r.json();})
+  .then(function(d){
+    var raw='';try{raw=d.candidates[0].content.parts[0].text;}catch(e){}
+    raw=raw.replace(/```json|```/g,'').trim();
+    var s=raw.indexOf('['),e2=raw.lastIndexOf(']');
+    if(s>=0&&e2>s)raw=raw.substring(s,e2+1);
+    try{
+      var parsed=JSON.parse(raw);
+      if(!Array.isArray(parsed))parsed=[parsed];
+      var added=0,dupes=0;
+      parsed.forEach(function(p){
+        if(!p.company)return;
+        var dup=leads.find(function(l){return l.company.toLowerCase().trim()===p.company.toLowerCase().trim();});
+        if(dup){dupes++;return;}
+        var nl={
+          id:'bdl_'+nextId++,num:nextNum++,
+          company:p.company,contact:'',email:'',title:'',
+          phone:p.phone||'',website:p.website||'',
+          niche:niche||'',subNiche:p.subNiche||'',
+          status:'Pending',decisionMaker:'',
+          city:p.city||'',state:p.state||'',timezone:'',
+          followUpDate:nbiz(t,4),lastContacted:t,
+          lastSender:SENDERS[0]||'',followUpCount:0,
+          pitchSent:'',painPoints:p.painPoints||'',servicesNeeded:'',
+          intentTrigger:p.intentTrigger||'',
+          evidenceLink:'',reviewQuote:p.reviewQuote||'',
+          linkedinUrl:'',
+          notes:'Rating: '+(p.rating||'?')+'⭐ | '+( p.address||'') +' | Source: Ask Maps',
+          dealStage:'Contacted',dealValue:'',
+          outreachLog:[{date:t,note:'Lead imported from Ask Maps. Trigger: '+(p.intentTrigger||'Unknown'),sender:''}],
+          contacts:[]
+        };
+        leads.unshift(nl);syncLead(nl);added++;
+      });
+      saveLoc();renderAll();
+      var msg=added+' lead'+(added!==1?'s':'')+' imported'+(dupes?' · '+dupes+' dupe'+(dupes!==1?'s':'')+' skipped':'');
+      if(statusEl)statusEl.innerHTML='<span style="color:#22c55e">✓ '+msg+'</span>';
+      if(added>0){
+        showBossCelebration(added+' leads from Ask Maps!');
+        setTimeout(function(){var p=document.getElementById('askmaps-panel');if(p)p.remove();},2500);
+      }
+      flash(msg);
+    }catch(err){
+      if(statusEl)statusEl.innerHTML='<span style="color:#ef4444">Parse error — try again with simpler text</span>';
+      flash('Parse error','bad');
+    }
+  }).catch(function(err){
+    if(statusEl)statusEl.innerHTML='<span style="color:#ef4444">Error: '+err.message+'</span>';
+    flash('API error: '+err.message,'bad');
+  });
+}
+
+// ── AUTO-RELOAD WHEN PAGE BECOMES VISIBLE ─────────────────────
 document.addEventListener('visibilitychange', function(){
   if(document.visibilityState === 'visible'){
     var lastSync = parseInt(localStorage.getItem('bdl-last-sync') || '0');
@@ -3380,8 +3479,9 @@ function clearAllDeleted(){
 
 // ── EXPORT CSV ──────────────────────────────────────
 function exportCSV(){
-  var cols=['id','num','company','contact','email','title','niche','status','dealStage','dealValue',
-    'decisionMaker','city','state','followUpDate','lastContacted','followUpCount','notes','pitchSent'];
+  var cols=['id','num','company','contact','email','phone','website','title','niche','subNiche','status','dealStage','dealValue',
+    'decisionMaker','city','state','followUpDate','lastContacted','followUpCount','notes','pitchSent',
+    'painPoints','servicesNeeded','intentTrigger','evidenceLink','reviewQuote','linkedinUrl'];
   var rows=[cols.join(',')];
   leads.forEach(function(l){
     var row=cols.map(function(c){
@@ -3882,18 +3982,7 @@ const GMAIL_CONFIG = {
   SCOPES: 'https://www.googleapis.com/auth/gmail.readonly'
 };
 
-/*
- * EXAMPLE (with fake credentials):
- * 
- * const GMAIL_CONFIG = {
- *   CLIENT_ID: '123456789-abc123xyz.apps.googleusercontent.com',
- *   API_KEY: 'AIzaSyABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890',
- *   DISCOVERY_DOCS: ['https://www.googleapis.com/discovery/v1/apis/gmail/v1/rest'],
- *   SCOPES: 'https://www.googleapis.com/auth/gmail.readonly'
- * };
- * 
- * Just replace YOUR_CLIENT_ID_HERE and YOUR_API_KEY_HERE with your real ones!
- */
+
 
 var gmailApiLoaded = false;
 var gmailAccounts = {}; // { email: { token, refreshToken, expiresAt } }
@@ -3917,75 +4006,8 @@ function saveGmailAccounts() {
 
 // Initialize Gmail API (load Google API client library)
 function initGmailAPI() {
-  if (gmailApiLoaded) return Promise.resolve();
-  
-  return new Promise(function(resolve, reject) {
-    // Check if already loaded
-    if (window.gapi) {
-      console.log('🔵 Google API already loaded');
-      gapi.load('client:auth2', function() {
-        gapi.client.init({
-          apiKey: GMAIL_CONFIG.API_KEY,
-          clientId: GMAIL_CONFIG.CLIENT_ID,
-          discoveryDocs: GMAIL_CONFIG.DISCOVERY_DOCS,
-          scope: GMAIL_CONFIG.SCOPES
-        }).then(function() {
-          console.log('✅ Gmail API initialized');
-          gmailApiLoaded = true;
-          resolve();
-        }).catch(function(error) {
-          console.error('❌ Gmail API init error:', error);
-          reject(error);
-        });
-      });
-      return;
-    }
-    
-    // Load Google API client
-    console.log('🔵 Loading Google API script...');
-    var script = document.createElement('script');
-    script.src = 'https://apis.google.com/js/api.js';
-    
-    // Timeout after 10 seconds
-    var timeout = setTimeout(function() {
-      console.error('❌ Google API load timeout');
-      reject(new Error('Timeout loading Google API. Check your internet connection.'));
-    }, 10000);
-    
-    script.onload = function() {
-      clearTimeout(timeout);
-      console.log('✅ Google API script loaded');
-      
-      gapi.load('client:auth2', function() {
-        console.log('🔵 Initializing Gmail client...');
-        gapi.client.init({
-          apiKey: GMAIL_CONFIG.API_KEY,
-          clientId: GMAIL_CONFIG.CLIENT_ID,
-          discoveryDocs: GMAIL_CONFIG.DISCOVERY_DOCS,
-          scope: GMAIL_CONFIG.SCOPES
-        }).then(function() {
-          console.log('✅ Gmail API initialized successfully');
-          gmailApiLoaded = true;
-          resolve();
-        }).catch(function(error) {
-          console.error('❌ Gmail API init failed:', error);
-          reject(error);
-        });
-      }, function(error) {
-        clearTimeout(timeout);
-        console.error('❌ gapi.load failed:', error);
-        reject(new Error('Failed to load Google API client: ' + error));
-      });
-    };
-    
-    script.onerror = function(error) {
-      clearTimeout(timeout);
-      console.error('❌ Script load error:', error);
-      reject(new Error('Failed to load Google API script. Check if apis.google.com is blocked.'));
-    };
-    
-    document.head.appendChild(script);
-  });
+  gmailApiLoaded = true;
+  return Promise.resolve();
 }
 
 // Connect a Gmail account via Google Identity Services (GIS)
@@ -4382,6 +4404,145 @@ function testGmailSetup() {
     : '<div style="margin-top:15px;padding:12px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:6px;color:#ef4444;font-size:13px">Fix the errors above then retry.</div>';
   html += '</div>';
   resultsEl.innerHTML = html;
+}
+
+// Gmail REST API via fetch — no gapi needed
+function gmailFetch(token, path, params) {
+  var url = 'https://gmail.googleapis.com/gmail/v1/' + path;
+  if (params) {
+    var qs = Object.keys(params).map(function(k) {
+      return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
+    }).join('&');
+    url += '?' + qs;
+  }
+  return fetch(url, { headers: { 'Authorization': 'Bearer ' + token } })
+    .then(function(r) { return r.json(); });
+}
+
+function isTokenExpired(account) {
+  return !account.expiresAt || Date.now() >= account.expiresAt;
+}
+
+function scanAllGmailAccounts() {
+  var connected = Object.keys(gmailAccounts).filter(function(e) {
+    return gmailAccounts[e] && gmailAccounts[e].connected;
+  });
+  if (!connected.length) { flash('No Gmail accounts connected — go to Gmail tab', 'bad'); return; }
+  ge('sdot').style.background = '#3b82f6';
+  ge('stxt').textContent = 'Scanning ' + connected.length + ' accounts...';
+  var total = 0, done = 0;
+  connected.forEach(function(email) {
+    scanGmailAccount(email).then(function(n) {
+      total += n; done++;
+      if (done === connected.length) {
+        ge('sdot').style.background = '#22c55e';
+        ge('stxt').textContent = 'Ready';
+        if (total > 0) { flash('✓ Found ' + total + ' new replies!'); renderAll(); }
+        else flash('No new replies found');
+      }
+    }).catch(function(err) {
+      done++;
+      console.error('Scan error ' + email + ':', err);
+      if (done === connected.length) {
+        ge('sdot').style.background = '#22c55e';
+        ge('stxt').textContent = 'Ready';
+      }
+    });
+  });
+}
+
+function scanGmailAccount(email) {
+  return new Promise(function(resolve, reject) {
+    var acc = gmailAccounts[email];
+    if (!acc || !acc.connected) { reject('Not connected'); return; }
+    if (isTokenExpired(acc)) {
+      flash(email + ' token expired — reconnect in Gmail tab', 'bad');
+      reject('Expired'); return;
+    }
+    var token = acc.token;
+    var after = new Date(acc.lastSync || (Date.now() - 7*24*60*60*1000)).toISOString().split('T')[0];
+    gmailFetch(token, 'users/me/messages', { q: 'in:inbox after:' + after + ' -from:me', maxResults: 50 })
+      .then(function(data) {
+        var msgs = data.messages || [];
+        if (!msgs.length) { acc.lastSync = Date.now(); saveGmailAccounts(); resolve(0); return; }
+        var processed = 0, replies = 0;
+        msgs.forEach(function(msg) {
+          gmailFetch(token, 'users/me/messages/' + msg.id, { format: 'metadata', metadataHeaders: 'From,Subject' })
+            .then(function(full) {
+              var headers = (full.payload && full.payload.headers) || [];
+              var from = (headers.find(function(h) { return h.name === 'From'; }) || {}).value || '';
+              var subject = (headers.find(function(h) { return h.name === 'Subject'; }) || {}).value || '';
+              // Detect bounces
+              var isBounce = from.toLowerCase().indexOf('mailer-daemon') >= 0 ||
+                             from.toLowerCase().indexOf('postmaster') >= 0 ||
+                             subject.toLowerCase().indexOf('undeliverable') >= 0 ||
+                             subject.toLowerCase().indexOf('delivery failed') >= 0 ||
+                             subject.toLowerCase().indexOf('returned mail') >= 0;
+              var matched = findLeadByEmail(isBounce ? subject : from);
+              if (matched) {
+                if (isBounce) {
+                  // Mark as bounced
+                  leads = leads.map(function(l) {
+                    if (String(l.id) !== String(matched.id)) return l;
+                    return Object.assign({}, l, {
+                      status: 'Bounced',
+                      outreachLog: (l.outreachLog || []).concat([{
+                        date: today(), note: 'Email bounced: ' + subject, sender: email
+                      }])
+                    });
+                  });
+                  var u = leads.find(function(l) { return String(l.id) === String(matched.id); });
+                  if (u) syncLead(u);
+                } else {
+                  // Mark as replied
+                  leads = leads.map(function(l) {
+                    if (String(l.id) !== String(matched.id)) return l;
+                    return Object.assign({}, l, {
+                      status: 'Replied', lastContacted: today(),
+                      outreachLog: (l.outreachLog || []).concat([{
+                        date: today(), note: 'Reply received: ' + subject, sender: email
+                      }])
+                    });
+                  });
+                  var u2 = leads.find(function(l) { return String(l.id) === String(matched.id); });
+                  if (u2) syncLead(u2);
+                }
+                replies++;
+              }
+              processed++;
+              if (processed === msgs.length) { acc.lastSync = Date.now(); saveGmailAccounts(); saveLoc(); resolve(replies); }
+            }).catch(function() {
+              processed++;
+              if (processed === msgs.length) { acc.lastSync = Date.now(); saveGmailAccounts(); resolve(replies); }
+            });
+        });
+      }).catch(reject);
+  });
+}
+
+function findLeadByEmail(emailAddress) {
+  var m = emailAddress.match(/<(.+?)>/);
+  var clean = (m ? m[1] : emailAddress).toLowerCase().trim();
+  return leads.find(function(lead) {
+    if (getPrimaryEmail(lead) && getPrimaryEmail(lead).toLowerCase() === clean) return true;
+    return (lead.contacts || []).some(function(c) { return c.email && c.email.toLowerCase() === clean; });
+  });
+}
+
+function processGmailReply(lead, replyData) {
+  var d = today();
+  leads = leads.map(function(l) {
+    if (String(l.id) !== String(lead.id)) return l;
+    return Object.assign({}, l, {
+      status: 'Replied', lastContacted: d, lastSender: replyData.senderAccount,
+      outreachLog: (l.outreachLog || []).concat([{
+        date: d, note: 'Reply: ' + (replyData.subject || 'No subject'), sender: replyData.senderAccount
+      }])
+    });
+  });
+  saveLoc();
+  var u = leads.find(function(l) { return String(l.id) === String(lead.id); });
+  if (u) syncLead(u);
 }
 
 // Initialize Gmail on app load
