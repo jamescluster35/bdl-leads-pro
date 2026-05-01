@@ -2910,7 +2910,7 @@ function placesLookup() {
   if (!company) { flash('Enter company name first', 'bad'); return; }
   var query = company + (city ? ' ' + city : '') + (state ? ' ' + state : '');
   var btn = ge('places-btn');
-  if (btn) { btn.textContent = '⏳ Loading...'; btn.disabled = true; }
+  if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
   doPlacesLookup(query, function(result) {
     if (btn) { btn.textContent = '📍 Places'; btn.disabled = false; }
     if (!result) { flash('No result found — try adding city/state', 'bad'); return; }
@@ -2921,6 +2921,8 @@ function placesLookup() {
     if (result.website && ge('n-website')) ge('n-website').value = result.website;
     if (result.reviewQuote && ge('n-quote')) ge('n-quote').value = result.reviewQuote;
     if (result.painPoints && ge('n-quote') && !ge('n-quote').value) ge('n-quote').value = result.painPoints;
+    if (result.intentTrigger && ge('n-trigger')) ge('n-trigger').value = result.intentTrigger;
+    if (result.painPoints) { var pp = ge('nt'); if(pp && !pp.value) pp.value = result.painPoints; }
     // Show result box
     var box = ge('research-result-box');
     if (box) {
@@ -2945,62 +2947,97 @@ function placesLookupPanel() {
   var state = (ge('lp-state') && ge('lp-state').value.trim()) || '';
   if (!company) { flash('Enter company name first', 'bad'); return; }
   var query = company + (city ? ' ' + city : '') + (state ? ' ' + state : '');
-  flash('Looking up ' + company + '...');
+  flash('🔍 Looking up ' + company + ' on Google...');
+  setSyn('syn', 'Places lookup...');
   doPlacesLookup(query, function(result) {
-    if (!result) { flash('No result found', 'bad'); return; }
-    if (result.city && ge('lp-city') && !ge('lp-city').value) ge('lp-city').value = result.city;
-    if (result.state && ge('lp-state') && !ge('lp-state').value) ge('lp-state').value = result.state;
+    setSyn('', 'Ready');
+    if (!result) { flash('No result found — try: "Company Name City State"', 'bad'); return; }
+    if (result.city && ge('lp-city')) ge('lp-city').value = result.city;
+    if (result.state && ge('lp-state')) ge('lp-state').value = result.state;
     if (result.phone && ge('lp-phone')) ge('lp-phone').value = result.phone;
     if (result.website && ge('lp-website')) ge('lp-website').value = result.website;
     if (result.reviewQuote && ge('lp-quote')) ge('lp-quote').value = result.reviewQuote;
-    if (result.painPoints && ge('lp-pp') && !ge('lp-pp').value) ge('lp-pp').value = result.painPoints;
-    flash('✓ Places data loaded for ' + company + '!');
+    if (result.painPoints && ge('lp-pp')) ge('lp-pp').value = result.painPoints;
+    if (result.intentTrigger && ge('lp-trigger')) ge('lp-trigger').value = result.intentTrigger;
+    if (result.rating && ge('lp-no')) {
+      var existing = ge('lp-no').value;
+      var ratingNote = 'Google Rating: '+result.rating+'⭐ ('+result.reviewCount+' reviews)';
+      ge('lp-no').value = existing ? existing + ' | ' + ratingNote : ratingNote;
+    }
+    var filled = [];
+    if (result.city) filled.push('city');
+    if (result.state) filled.push('state');
+    if (result.phone) filled.push('phone');
+    if (result.website) filled.push('website');
+    flash('✓ Filled: ' + filled.join(', ') + ' | Rating: ' + (result.rating||'N/A') + '⭐');
   });
 }
 
 function doPlacesLookup(query, callback) {
-  // Step 1: Search for place
   var searchUrl = 'https://places.googleapis.com/v1/places:searchText';
   fetch(searchUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'X-Goog-Api-Key': PLACES_API_KEY,
-      'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.addressComponents,places.reviews'
+      'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.addressComponents,places.types,places.businessStatus,places.reviews,places.editorialSummary'
     },
     body: JSON.stringify({ textQuery: query, maxResultCount: 1 })
   })
-  .then(function(r) { return r.json(); })
+  .then(function(r) {
+    if (!r.ok) {
+      r.json().then(function(e){
+        flash('Places API error: '+(e.error&&e.error.message||r.status), 'bad');
+      }).catch(function(){ flash('Places API error: '+r.status, 'bad'); });
+      callback(null); return Promise.reject('api error');
+    }
+    return r.json();
+  })
   .then(function(data) {
-    if (!data.places || !data.places.length) { callback(null); return; }
+    if (!data.places || !data.places.length) {
+      flash('No business found — try adding city or state to company name', 'bad');
+      callback(null); return;
+    }
     var place = data.places[0];
-
-    // Extract city and state from address components
     var city = '', state = '';
     (place.addressComponents || []).forEach(function(comp) {
       if (comp.types && comp.types.indexOf('locality') >= 0) city = comp.longText || '';
       if (comp.types && comp.types.indexOf('administrative_area_level_1') >= 0) state = comp.shortText || '';
     });
 
-    // Extract best negative review
+    // Extract reviews — try multiple possible formats
     var reviewQuote = '';
     var painPoints = '';
-    var reviews = place.reviews || [];
-    // Find lowest rated review with text
-    var negReviews = reviews.filter(function(r) { return r.rating <= 3 && r.text && r.text.text; });
-    negReviews.sort(function(a, b) { return a.rating - b.rating; });
+    var allReviews = place.reviews || [];
+    
+    // Sort by rating (lowest first = most negative = best pain point)
+    var negReviews = allReviews.filter(function(r) {
+      var txt = (r.text && r.text.text) || (r.originalText && r.originalText.text) || '';
+      return r.rating <= 3 && txt.length > 10;
+    });
+    negReviews.sort(function(a,b){return a.rating - b.rating;});
+    
     if (negReviews.length) {
       var best = negReviews[0];
-      var txt = best.text.text;
-      reviewQuote = txt.length > 120 ? txt.substring(0, 120) + '...' : txt;
+      var txt = (best.text && best.text.text) || (best.originalText && best.originalText.text) || '';
+      reviewQuote = txt.length > 150 ? txt.substring(0,150)+'...' : txt;
       painPoints = reviewQuote;
+    } else if (place.editorialSummary && place.editorialSummary.text) {
+      // Fallback to editorial summary if no negative reviews
+      painPoints = place.editorialSummary.text;
     }
+
+    // If we have reviews + Gemini key, use Gemini to extract better pain points
+    var geminiKey = localStorage.getItem('bdl-gemini-key');
+    var allReviewTexts = allReviews.map(function(r){
+      return (r.text&&r.text.text)||(r.originalText&&r.originalText.text)||'';
+    }).filter(Boolean).join(' | ');
 
     var result = {
       name: place.displayName && place.displayName.text ? place.displayName.text : query,
       address: place.formattedAddress || '',
       phone: place.nationalPhoneNumber || '',
-      website: place.websiteUri ? place.websiteUri.replace(/\/$/, '') : '',
+      website: place.websiteUri ? place.websiteUri.replace(/\/$/,'') : '',
       rating: place.rating || 0,
       reviewCount: place.userRatingCount || 0,
       city: city,
@@ -3008,7 +3045,29 @@ function doPlacesLookup(query, callback) {
       reviewQuote: reviewQuote,
       painPoints: painPoints
     };
-    callback(result);
+
+    // If Gemini key available and reviews exist, enhance pain points with AI
+    if (geminiKey && allReviewTexts) {
+      var geminiPrompt = 'Analyse these Google reviews for a business called "'+result.name+'". Extract the single most impactful negative complaint as a short quote (max 100 chars). Return JSON only: {"reviewQuote":"...","painPoints":"...","intentTrigger":"one of: Billing Issues/Maintenance Lag/Communication Gap/Poor Reviews/No Response/High Turnover"}. Reviews: '+allReviewTexts.substring(0,800);
+      fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+geminiKey, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({contents:[{parts:[{text:geminiPrompt}]}],generationConfig:{temperature:0.1,maxOutputTokens:300}})
+      }).then(function(r){return r.json();})
+      .then(function(d){
+        var raw='';try{raw=d.candidates[0].content.parts[0].text;}catch(e){}
+        raw=raw.replace(/```json|```/g,'').trim();
+        try{
+          var ai=JSON.parse(raw);
+          if(ai.reviewQuote)result.reviewQuote=ai.reviewQuote;
+          if(ai.painPoints)result.painPoints=ai.painPoints;
+          if(ai.intentTrigger)result.intentTrigger=ai.intentTrigger;
+        }catch(e){}
+        callback(result);
+      }).catch(function(){callback(result);});
+    } else {
+      callback(result);
+    }
   })
   .catch(function(err) {
     console.error('Places API error:', err);
@@ -3051,9 +3110,14 @@ function runAskMapsImport(){
   var niche=(document.getElementById('am-niche')||{}).value||'';
   if(!txt.trim()){flash('Paste Ask Maps result first','bad');return;}
   var key=localStorage.getItem('bdl-gemini-key');
-  if(!key){flash('Add Gemini API key in AI panel first','bad');return;}
+  if(!key){
+    flash('Gemini API key needed! Open AI panel (✈ AI button) → paste key → Save Key','bad');
+    var statusEl=document.getElementById('am-status');
+    if(statusEl)statusEl.innerHTML='<span style="color:#ef4444">❌ No Gemini key — click the ✈ AI button in header, paste your key and Save</span>';
+    return;
+  }
   var statusEl=document.getElementById('am-status');
-  if(statusEl)statusEl.innerHTML='<span style="color:#a78bfa">AI extracting leads…</span>';
+  if(statusEl)statusEl.innerHTML='<span style="color:#a78bfa">🤖 AI reading your text...</span>';
   var t=today();
   var nextId=leads.reduce(function(mx,l){var m=String(l.id).match(/^bdl_(\d+)$/);return m?Math.max(mx,parseInt(m[1])):mx;},0)+1;
   var nextNum=leads.reduce(function(mx,l){return Math.max(mx,l.num||0);},0)+1;
