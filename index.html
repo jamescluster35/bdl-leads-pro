@@ -90,6 +90,9 @@
       </div>
     </div>
     <div class="hacts">
+  <button onclick="runGlobalRepair()" class="hb hb-o" title="Repair Data & Timezones">🔧 Repair</button>
+  <button id="ai-magic-btn" onclick="openAiAssistant()" class="hb">✨ AI Magic</button>
+</div>
       
       <div class="syns"><span id="sdot"></span><span id="stxt">Ready</span></div>
       <span id="fmsg" class="h"></span>
@@ -4984,6 +4987,37 @@ Examples:
       showBossCelebration(added + ' LinkedIn lead' + (added > 1 ? 's' : '') + ' captured!');
     }
   });
+  /**
+ * Triggers the server-side repair to fix missing timezones 
+ * and align data to the 32-column schema.
+ */
+async function runGlobalRepair() {
+  if (!confirm("This will scan all leads and backfill missing timezones based on City/State. It may take a few moments. Proceed?")) return;
+  
+  // Visual feedback that it's working
+  const btn = event.target;
+  const originalText = btn.innerHTML;
+  btn.innerHTML = "⏳ Repairing...";
+  btn.disabled = true;
+
+  try {
+    google.script.run.withSuccessHandler(result => {
+      alert("Repair Complete: " + result);
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+      
+      // Refresh the table to show the new timezones
+      google.script.run.withSuccessHandler(data => {
+        allLeads = normLeads(data);
+        renderLeads();
+      }).getLeads();
+    }).executeGlobalRepair(); // This calls the function in your Code.gs
+  } catch (err) {
+    alert("Repair failed: " + err);
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+  }
+}
 </script>
 
 </body>
