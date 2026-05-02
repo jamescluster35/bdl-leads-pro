@@ -181,6 +181,10 @@
   <input id="f-score-min" type="number" min="0" max="100" placeholder="Min score" oninput="rl()" style="background:#111;border:1px solid #1e293b;border-radius:8px;padding:6px 10px;color:#e2e8f0;font-size:12px;outline:none;width:90px">
   <button onclick="clearAdvFilters()" style="background:rgba(239,68,68,.08);color:#fca5a5;border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer">✕ Clear</button>
   <button onclick="selectAllVisible()" style="background:rgba(79,70,229,.1);color:#a78bfa;border:1px solid rgba(79,70,229,.2);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer">☑ Select All</button>
+  <input id="f-priority-min" type="number" min="0" max="10" placeholder="Min Priority" oninput="rl()" style="background:#111;border:1px solid #1e293b;border-radius:8px;padding:6px 10px;color:#e2e8f0;font-size:12px;outline:none;width:100px">
+  <select id="f-evidence" onchange="rl()" style="background:#111;border:1px solid #1e293b;border-radius:8px;padding:6px 10px;color:#e2e8f0;font-size:12px;outline:none">
+    <option value="">Evidence: All</option><option value="Yes">✅ Has Evidence</option><option value="No">❌ No Evidence</option>
+  </select>
 </div>
 <button id="adv-toggle-btn" onclick="toggleAdvFilters()" style="background:#111;border:1px solid #1a1a1a;border-radius:8px;padding:5px 12px;font-size:11px;color:#475569;cursor:pointer;margin-bottom:8px">⚙ Filters</button>
       <div id="larea"></div>
@@ -695,6 +699,11 @@ function gf(){
     if(ge('f-dm')&&ge('f-dm').value&&l.decisionMaker!==ge('f-dm').value)return false;
     var minScore=ge('f-score-min')&&ge('f-score-min').value?parseInt(ge('f-score-min').value):0;
     if(minScore>0&&scoreLead(l)<minScore)return false;
+    var minPri=ge('f-priority-min')&&ge('f-priority-min').value?parseInt(ge('f-priority-min').value):0;
+    if(minPri>0&&((l.priority||0)<minPri))return false;
+    var fEvidence=ge('f-evidence')&&ge('f-evidence').value;
+    if(fEvidence==='Yes'&&!l.evidenceLink)return false;
+    if(fEvidence==='No'&&l.evidenceLink)return false;
     return true;
   });
 }
@@ -981,6 +990,7 @@ function renderLp(){
     '<div class="lp-sec"><h3>📅 Pipeline & Deal</h3>'+
       '<div class="lp-grid">'+
         '<div class="lp-f"><label>Status</label><select id="lp-st">'+opts+'</select></div>'+
+        '<div class="lp-f"><label>Priority (0–10)</label><input id="lp-priority" type="number" min="0" max="10" value="'+esc(String(l.priority!==undefined?l.priority:5))+'" style="background:#111;border:1px solid #1e293b;border-radius:7px;padding:7px 10px;color:#e2e8f0;font-size:12px;width:100%;box-sizing:border-box;outline:none"></div>'+
         '<div class="lp-f"><label>Niche</label><input id="lp-ni" list="niche-list" value="'+esc(l.niche||'')+'" placeholder="Type or select..." style="background:#111;border:1px solid #1e293b;border-radius:7px;padding:7px 10px;color:#e2e8f0;font-size:12px;width:100%;box-sizing:border-box;outline:none"></div>'+
         '<div class="lp-f"><label>Deal Stage</label><select id="lp-ds">'+DEAL_STAGES.map(function(s){return'<option'+(s===(l.dealStage||'Contacted')?' selected':'')+'>'+esc(s)+'</option>';}).join('')+'</select></div>'+
         '<div class="lp-f"><label>Expected Value ($)</label><input id="lp-dv" type="number" placeholder="e.g. 147" value="'+esc(l.dealValue||'')+'"></div>'+
@@ -4904,8 +4914,20 @@ Examples:
 
     var added = 0;
     incomingData.forEach(function(lead) {
-      // Skip duplicates by email
       var em = (lead.email || '').toLowerCase().trim();
+      // Inbound Merge: if email exists, boost priority & merge diagnostic data
+      var existIdx = em ? leads.findIndex(function(l){ return (l.email||'').toLowerCase()===em; }) : -1;
+      if(existIdx>=0){
+        var ex=leads[existIdx];
+        leads[existIdx]=Object.assign({},ex,{
+          priority:10,status:'Active',lastContacted:t,followUpDate:nbiz(t,1),
+          outreachLog:(ex.outreachLog||[]).concat([{date:t,note:'LinkedIn inbound merge — '+(event.data.source||'LinkedIn'),sender:''}]),
+          strategicPlay:lead.context||ex.strategicPlay||'',
+          notes:(ex.notes||'')+'\nLinkedIn:'+(lead.context||'')
+        });
+        syncLead(leads[existIdx]);added++;return;
+      }
+      // Skip strict new-lead duplicates
       if (em && leads.find(function(l) { return (l.email||'').toLowerCase()===em; })) return;
 
       var newLead = {
@@ -4916,11 +4938,14 @@ Examples:
         email: lead.email || '',
         title: lead.title || '',
         niche: lead.niche || '',
-        status: 'Pending',
+        status: 'Active',
+        priority: 10,
         decisionMaker: '',
         city: lead.city || '',
         state: lead.state || '',
-        timezone: '',
+        timezone: lead.city?lookupTimezone({city:lead.city,state:lead.state||''})||'':'',
+        evidenceLink: lead.profileUrl||'',
+        contactName: lead.name||'', contactTitle: lead.title||'',
         followUpDate: nbiz(t, 4),
         lastContacted: t,
         lastSender: SENDERS[0] || '',
