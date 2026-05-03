@@ -444,7 +444,7 @@ const TZ_MAP={
 };
 
 // ── Universal 32-Column Schema (A-AF) ──────────────────────────────────────
-var PLACES_KEY='AIzaSyBm2EvSY4pjg_N1Tl80n1U4bRq90fVdpoM'; // BDL Places Key — regenerate if exposed
+var PLACES_KEY='AIzaSyD50n5Dly2xhYA_DYbnn2KdN_d7EIT-sig'; // BDL Places Key — regenerate if exposed
 var SCHEMA_COLS=['id','company','yearEst','address','city','state','zip','phone','website',
   'mobileScore','serviceFormat','profileStatus','leadDestination','markupLoss','frictionFees',
   'reviewDecay','recentComplaintQuote','techFriction','priceRange','reviewCount','strategicPlay',
@@ -594,8 +594,11 @@ function applyPlacesResult(leadId,result){
   leads=leads.map(function(x){
     if(String(x.id)!==String(leadId))return x;
     var u=Object.assign({},x);
+    // Always overwrite phone — Places data is authoritative
     if(result.phone){u.phone=result.phone;filled.push('phone');}
-    if(result.address&&!x.address){u.address=result.address;filled.push('address');}
+    // Overwrite address if Places returned one
+    if(result.address){u.address=result.address;filled.push('address');}
+
     if(result.zip&&!x.zip){u.zip=result.zip;filled.push('zip');}
     if(result.city&&!x.city){u.city=result.city;}
     if(result.state&&!x.state){u.state=result.state;}
@@ -617,20 +620,47 @@ function applyPlacesResult(leadId,result){
   flash(filled.length?'✓ Updated: '+filled.join(', '):'No new data found');
 }
 function bulkPlacesUpdate(){
+  // Target: leads missing phone OR address OR both
   var targets=leads.filter(function(l){return !l.phone||!l.address;});
   if(!targets.length){flash('All leads already have phone + address!');return;}
-  if(!confirm('Auto-fill '+targets.length+' leads missing phone/address from Places API? Runs one at a time.'))return;
-  var i=0,updated=0;
-  function next(){
-    if(i>=targets.length){flash('✓ Bulk done: '+updated+'/'+targets.length+' updated');saveLoc();renderAll();return;}
-    var l=targets[i++];
-    flash('Updating '+i+'/'+targets.length+': '+l.company+'...');
-    doPlacesLookup(l.company+(l.city?' '+l.city:'')+(l.state?' '+l.state:''),function(r){
-      if(r){applyPlacesResult(l.id,r);updated++;}
-      setTimeout(next,700);
+  if(!confirm('Auto-fill '+targets.length+' leads from Google Places?'))return;
+
+  flash('📍 Starting bulk update for '+targets.length+' leads...');
+  var updated=0,failed=0,done=0;
+
+  // Run in batches of 5 simultaneously, then next batch
+  // Avoids rate limit while being much faster than sequential
+  var batchSize=5;
+  var batches=[];
+  for(var b=0;b<targets.length;b+=batchSize){
+    batches.push(targets.slice(b,b+batchSize));
+  }
+  var batchIdx=0;
+
+  function runBatch(){
+    if(batchIdx>=batches.length){
+      saveLoc();renderAll();
+      flash('✓ Bulk Places done: '+updated+' updated, '+failed+' not found');
+      return;
+    }
+    var batch=batches[batchIdx++];
+    var batchDone=0;
+    batch.forEach(function(l){
+      var q=l.company+(l.city?' '+l.city:'')+(l.state?' '+l.state:'');
+      doPlacesLookup(q,function(r){
+        done++;
+        if(r){applyPlacesResult(l.id,r);updated++;}
+        else{failed++;}
+        batchDone++;
+        flash('📍 Progress: '+done+'/'+targets.length+' ('+updated+' updated)...');
+        if(batchDone===batch.length){
+          // Next batch after 800ms gap
+          setTimeout(runBatch,800);
+        }
+      });
     });
   }
-  next();
+  runBatch();
 }
 
 // ── Open Now toggle ─────────────────────────────────────────────────────────
@@ -3385,36 +3415,10 @@ function placesLookup() {
   });
 }
 
-function placesLookupPanel() {
-  var company = (ge('lp-co') && ge('lp-co').value.trim()) || '';
-  var city = (ge('lp-city') && ge('lp-city').value.trim()) || '';
-  var state = (ge('lp-state') && ge('lp-state').value.trim()) || '';
-  if (!company) { flash('Enter company name first', 'bad'); return; }
-  var query = company + (city ? ' ' + city : '') + (state ? ' ' + state : '');
-  flash('🔍 Looking up ' + company + ' on Google...');
-  setSyn('syn', 'Places lookup...');
-  doPlacesLookup(query, function(result) {
-    setSyn('', 'Ready');
-    if (!result) { flash('No result found — try: "Company Name City State"', 'bad'); return; }
-    if (result.city && ge('lp-city')) ge('lp-city').value = result.city;
-    if (result.state && ge('lp-state')) ge('lp-state').value = result.state;
-    if (result.phone && ge('lp-phone')) ge('lp-phone').value = result.phone;
-    if (result.website && ge('lp-website')) ge('lp-website').value = result.website;
-    if (result.reviewQuote && ge('lp-quote')) ge('lp-quote').value = result.reviewQuote;
-    if (result.painPoints && ge('lp-pp')) ge('lp-pp').value = result.painPoints;
-    if (result.intentTrigger && ge('lp-trigger')) ge('lp-trigger').value = result.intentTrigger;
-    if (result.rating && ge('lp-no')) {
-      var existing = ge('lp-no').value;
-      var ratingNote = 'Google Rating: '+result.rating+'⭐ ('+result.reviewCount+' reviews)';
-      ge('lp-no').value = existing ? existing + ' | ' + ratingNote : ratingNote;
-    }
-    var filled = [];
-    if (result.city) filled.push('city');
-    if (result.state) filled.push('state');
-    if (result.phone) filled.push('phone');
-    if (result.website) filled.push('website');
-    flash('✓ Filled: ' + filled.join(', ') + ' | Rating: ' + (result.rating||'N/A') + '⭐');
-  });
+function placesLookupPanel(){
+  // Delegates to updateLeadFromPlaces which uses correct v5 field IDs
+  // and saves directly to lead object + sheet
+  updateLeadFromPlaces(lpId);
 }
 
 function doPlacesLookup(query,callback){
