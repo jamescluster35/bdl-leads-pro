@@ -507,7 +507,18 @@ function normLeads(arr){return arr.map(function(l){
     if(_btz)l.timezone=_btz;
   }
   // Bounce auto-detection from outreachLog
-  if(l.status!=='Bounced'){var _log=l.outreachLog||[];for(var _i=0;_i<_log.length;_i++){if(_log[_i].note&&_log[_i].note.toLowerCase().indexOf('bounced')>=0){l.status='Bounced';break;}}}
+  // Bounce auto-detect: only if PRIMARY email is explicitly named in bounce note
+if(l.status!=='Bounced'){
+  var _primaryEm=(l.email||'').toLowerCase().trim();
+  var _log=l.outreachLog||[];
+  for(var _i=0;_i<_log.length;_i++){
+    var _note=(_log[_i].note||'').toLowerCase();
+    // Must mention 'bounced' AND mention the primary email specifically
+    if(_note.indexOf('bounced')>=0&&_primaryEm&&_note.indexOf(_primaryEm)>=0){
+      l.status='Bounced';break;
+    }
+  }
+}
   ['followUpDate','lastContacted'].forEach(function(k){if(l[k])l[k]=fmtDate(l[k]);});
   // Recalculate followUpDate — always derive from last log or lastContacted + 4 biz days
   var refDate='';
@@ -520,7 +531,9 @@ function normLeads(arr){return arr.map(function(l){
   // Auto-pull lastSender from last log entry that has a sender
   if(l.outreachLog&&l.outreachLog.length){
     for(var i=l.outreachLog.length-1;i>=0;i--){
-      if(l.outreachLog[i].sender){l.lastSender=l.outreachLog[i].sender;break;}
+      var s=l.outreachLog[i].sender||'';
+      // Skip system entries: [Places API], [AI], etc.
+      if(s&&s.charAt(0)!=='['){l.lastSender=s;break;}
     }
   }
   if(refDate){
@@ -594,11 +607,11 @@ function applyPlacesResult(leadId,result){
   leads=leads.map(function(x){
     if(String(x.id)!==String(leadId))return x;
     var u=Object.assign({},x);
-    // Always overwrite phone — Places data is authoritative
+    // ── NEVER touch outreach/sender fields ──────────────────
+    // lastSender, lastContacted, followUpDate stay as-is
+    // Only update data/diagnostic fields from Places
     if(result.phone){u.phone=result.phone;filled.push('phone');}
-    // Overwrite address if Places returned one
     if(result.address){u.address=result.address;filled.push('address');}
-
     if(result.zip&&!x.zip){u.zip=result.zip;filled.push('zip');}
     if(result.city&&!x.city){u.city=result.city;}
     if(result.state&&!x.state){u.state=result.state;}
@@ -606,10 +619,22 @@ function applyPlacesResult(leadId,result){
     if(result.reviewCount){u.reviewCount=result.reviewCount;filled.push('reviews');}
     if(result.reviewQuote&&!x.recentComplaintQuote){u.recentComplaintQuote=result.reviewQuote;filled.push('complaint');}
     if(result.evidenceLink&&!x.evidenceLink){u.evidenceLink=result.evidenceLink;filled.push('evidence');}
-    if(result.rating){u.notes=(u.notes?u.notes+' | ':'')+'Google: '+result.rating+'⭐ ('+result.reviewCount+' reviews)';}
-    if(!u.timezone){var tz=lookupTimezone(u);if(tz){u.timezone=tz;filled.push('tz');}}
+    if(result.rating){
+      u.notes=(u.notes?u.notes+' | ':'')+'Google: '+result.rating+'⭐ ('+result.reviewCount+' reviews)';
+    }
+    if(!u.timezone||!isValidIANA(u.timezone)){
+      var tz=lookupTimezone(u);if(tz){u.timezone=tz;filled.push('tz');}
+    }
     u.lastScanDate=today();
-    u.outreachLog=(u.outreachLog||[]).concat([{date:today(),note:'Places auto-fill: '+filled.join(', '),sender:'Places API'}]);
+    // Log with sender:'Places API' for the log entry only — lastSender preserved
+    u.outreachLog=(u.outreachLog||[]).concat([{
+      date:today(),
+      note:'Places auto-fill: '+filled.join(', '),
+      sender:'[Places API]'  // square brackets = system entry, not a real sender
+    }]);
+    // Explicitly preserve original sender fields
+    u.lastSender=x.lastSender;
+    u.lastContacted=x.lastContacted;
     return u;
   });
   saveLoc();
@@ -619,6 +644,7 @@ function applyPlacesResult(leadId,result){
   rl();
   flash(filled.length?'✓ Updated: '+filled.join(', '):'No new data found');
 }
+
 function bulkPlacesUpdate(){
   // Target: leads missing phone OR address OR both
   var targets=leads.filter(function(l){return !l.phone||!l.address;});
@@ -727,7 +753,7 @@ function smartUpdateFromPaste(){
       var merged=Object.assign({},x);
       allowed.forEach(function(k){if(updates[k]!==undefined&&updates[k]!=='')merged[k]=updates[k];});
       if(updates.status&&updates.status!==x.status)merged.followUpDate=nbiz(today(),4);
-      merged.outreachLog=(merged.outreachLog||[]).concat([{date:today(),note:'Smart Update — '+updCount+' fields via AI paste',sender:'AI'}]);
+      merged.outreachLog=(merged.outreachLog||[]).concat([{date:today(),note:'Smart Update — '+updCount+' fields via AI paste',sender:'[AI]'}]);
       return merged;
     });
     saveLoc();var upd=leads.find(function(x){return String(x.id)===String(lpId);});
