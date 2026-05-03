@@ -396,6 +396,7 @@ const TZ_MAP={
 };
 
 // ── Universal 32-Column Schema (A-AF) ──────────────────────────────────────
+var PLACES_KEY='AIzaSyD50n5Dly2xhYA_DYbnn2KdN_d7EIT-sig'; // BDL Places Key — regenerate if exposed
 var SCHEMA_COLS=['id','company','yearEst','address','city','state','zip','phone','website',
   'mobileScore','serviceFormat','profileStatus','leadDestination','markupLoss','frictionFees',
   'reviewDecay','recentComplaintQuote','techFriction','priceRange','reviewCount','strategicPlay',
@@ -3286,110 +3287,72 @@ function placesLookupPanel() {
   });
 }
 
-function doPlacesLookup(query, callback) {
-  var searchUrl = 'https://places.googleapis.com/v1/places:searchText';
-  fetch(searchUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Goog-Api-Key': PLACES_API_KEY,
-      'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.addressComponents,places.types,places.businessStatus,places.reviews,places.editorialSummary'
+function doPlacesLookup(query,callback){
+  fetch('https://places.googleapis.com/v1/places:searchText',{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'X-Goog-Api-Key':PLACES_KEY,
+      'X-Goog-FieldMask':'places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.reviews,places.addressComponents'
     },
-    body: JSON.stringify({ textQuery: query, maxResultCount: 1 })
+    body:JSON.stringify({textQuery:query,languageCode:'en',maxResultCount:1})
   })
-  .then(function(r) {
-    if (!r.ok) {
-      r.json().then(function(e){
-        flash('Places API error: '+(e.error&&e.error.message||r.status), 'bad');
-      }).catch(function(){ flash('Places API error: '+r.status, 'bad'); });
-      callback(null); return Promise.reject('api error');
-    }
-    return r.json();
-  })
-  .then(function(data) {
-    if (!data.places || !data.places.length) {
-      flash('No business found — try adding city or state to company name', 'bad');
-      callback(null); return;
-    }
-    var place = data.places[0];
-    var city = '', state = '';
-    (place.addressComponents || []).forEach(function(comp) {
-      if (comp.types && comp.types.indexOf('locality') >= 0) city = comp.longText || '';
-      if (comp.types && comp.types.indexOf('administrative_area_level_1') >= 0) state = comp.shortText || '';
+  .then(function(r){return r.json();})
+  .then(function(data){
+    if(!data.places||!data.places.length){callback(null);return;}
+    var p=data.places[0];
+    // ── Parse address components ────────────────────────────
+    var street='',cityPart='',stateCode='',zipCode='',countryCode='';
+    var comps=p.addressComponents||[];
+    comps.forEach(function(c){
+      var types=c.types||[];
+      if(types.indexOf('street_number')>=0)street=c.longText+' ';
+      if(types.indexOf('route')>=0)street+=c.longText;
+      if(types.indexOf('locality')>=0||types.indexOf('postal_town')>=0)cityPart=c.longText;
+      if(types.indexOf('administrative_area_level_1')>=0)stateCode=c.shortText;
+      if(types.indexOf('postal_code')>=0)zipCode=c.longText;
+      if(types.indexOf('country')>=0)countryCode=c.shortText;
     });
-
-    // Extract reviews — try multiple possible formats
-    var reviewQuote = '';
-    var painPoints = '';
-    var allReviews = place.reviews || [];
-    
-    // Sort by rating (lowest first = most negative = best pain point)
-    var negReviews = allReviews.filter(function(r) {
-      var txt = (r.text && r.text.text) || (r.originalText && r.originalText.text) || '';
-      return r.rating <= 3 && txt.length > 10;
+    // Fallback: parse formattedAddress
+    if(!cityPart){
+      var parts=(p.formattedAddress||'').split(',');
+      street=street||(parts[0]?parts[0].trim():'');
+      cityPart=parts[1]?parts[1].trim():'';
+      var szp=parts[2]?parts[2].trim():'';
+      stateCode=stateCode||szp.split(' ')[0]||'';
+      zipCode=zipCode||szp.split(' ')[1]||'';
+    }
+    // ── Best complaint review (lowest rating) ────────────────
+    var reviews=p.reviews||[];
+    var complaint='';
+    if(reviews.length){
+      var sorted=reviews.slice().sort(function(a,b){return (a.rating||5)-(b.rating||5);});
+      var rev=sorted[0];
+      if(rev&&rev.text&&rev.text.text)complaint=rev.text.text.substring(0,250);
+    }
+    // ── Evidence link ─────────────────────────────────────────
+    var placeId=p.id||'';
+    var evLink=placeId?'https://www.google.com/maps/place/?q=place_id:'+placeId:'';
+    callback({
+      phone:p.nationalPhoneNumber||'',
+      website:p.websiteUri||'',
+      address:street.trim(),
+      city:cityPart,
+      state:stateCode,
+      zip:zipCode,
+      country:countryCode,
+      rating:p.rating||'',
+      reviewCount:p.userRatingCount||'',
+      reviewQuote:complaint,
+      evidenceLink:evLink
     });
-    negReviews.sort(function(a,b){return a.rating - b.rating;});
-    
-    if (negReviews.length) {
-      var best = negReviews[0];
-      var txt = (best.text && best.text.text) || (best.originalText && best.originalText.text) || '';
-      reviewQuote = txt.length > 150 ? txt.substring(0,150)+'...' : txt;
-      painPoints = reviewQuote;
-    } else if (place.editorialSummary && place.editorialSummary.text) {
-      // Fallback to editorial summary if no negative reviews
-      painPoints = place.editorialSummary.text;
-    }
-
-    // If we have reviews + Gemini key, use Gemini to extract better pain points
-    var geminiKey = localStorage.getItem('bdl-gemini-key');
-    var allReviewTexts = allReviews.map(function(r){
-      return (r.text&&r.text.text)||(r.originalText&&r.originalText.text)||'';
-    }).filter(Boolean).join(' | ');
-
-    var result = {
-      name: place.displayName && place.displayName.text ? place.displayName.text : query,
-      address: place.formattedAddress || '',
-      phone: place.nationalPhoneNumber || '',
-      website: place.websiteUri ? place.websiteUri.replace(/\/$/,'') : '',
-      rating: place.rating || 0,
-      reviewCount: place.userRatingCount || 0,
-      city: city,
-      state: state,
-      reviewQuote: reviewQuote,
-      painPoints: painPoints
-    };
-
-    // If Gemini key available and reviews exist, enhance pain points with AI
-    if (geminiKey && allReviewTexts) {
-      var geminiPrompt = 'Analyse these Google reviews for a business called "'+result.name+'". Extract the single most impactful negative complaint as a short quote (max 100 chars). Return JSON only: {"reviewQuote":"...","painPoints":"...","intentTrigger":"one of: Billing Issues/Maintenance Lag/Communication Gap/Poor Reviews/No Response/High Turnover"}. Reviews: '+allReviewTexts.substring(0,800);
-      fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+geminiKey, {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({contents:[{parts:[{text:geminiPrompt}]}],generationConfig:{temperature:0.1,maxOutputTokens:300}})
-      }).then(function(r){return r.json();})
-      .then(function(d){
-        var raw='';try{raw=d.candidates[0].content.parts[0].text;}catch(e){}
-        raw=raw.replace(/```json|```/g,'').trim();
-        try{
-          var ai=JSON.parse(raw);
-          if(ai.reviewQuote)result.reviewQuote=ai.reviewQuote;
-          if(ai.painPoints)result.painPoints=ai.painPoints;
-          if(ai.intentTrigger)result.intentTrigger=ai.intentTrigger;
-        }catch(e){}
-        callback(result);
-      }).catch(function(){callback(result);});
-    } else {
-      callback(result);
-    }
   })
-  .catch(function(err) {
-    console.error('Places API error:', err);
-    flash('Places lookup failed: ' + err.message, 'bad');
+  .catch(function(err){
+    console.error('Places error:',err);
     callback(null);
   });
 }
 
-// ── ASK MAPS BULK IMPORTER ────────────────────────────────────────────────
 function showAskMapsImport(){
   var ex=document.getElementById('askmaps-panel');if(ex)ex.remove();
   var panel=document.createElement('div');
