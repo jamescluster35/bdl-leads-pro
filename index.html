@@ -101,6 +101,7 @@
       <button class="hb hb-o" onclick="syncAll()">☁️ Sync All</button>
       <button class="hb hb-g" onclick="logout()">Sign Out</button>
       <button class="hb" style="background:rgba(16,185,129,.1);color:#34d399;border:1px solid rgba(16,185,129,.2)" onclick="runHealthCheck()" title="App Health Check">🩺 Health</button>
+      <button class="hb" style="background:rgba(16,185,129,.1);color:#34d399;border:1px solid rgba(16,185,129,.2)" onclick="bulkPlacesUpdate()" title="Auto-fill phone+address for leads missing data">📍 Bulk Places</button>
       <button class="hb" style="background:rgba(139,92,246,.1);color:#a78bfa;border:1px solid rgba(139,92,246,.2)" onclick="executeGlobalRepair()" title="Re-align all tabs to 32-col schema">🔧 Repair</button>
       <div class="ai-btn-wrap">
         <div class="ai-tip">AI Assistant</div>
@@ -506,6 +507,67 @@ function daysSince(d){if(!d)return null;var diff=Math.floor((new Date()-new Date
 function sortLeads(arr){var t=today();return arr.slice().sort(function(a,b){function pri(l){if(l.followUpDate&&l.followUpDate<t&&['Bounced','Replied'].indexOf(l.status)<0)return 0;if(l.followUpDate===t&&['Bounced','Replied'].indexOf(l.status)<0)return 1;if(l.status==='Warm Lead')return 2;if(l.status==='Replied')return 3;if(l.status==='Sent')return 4;if(l.status==='Pending')return 5;return 6;}return pri(a)-pri(b)||(a.followUpDate||'').localeCompare(b.followUpDate||'');});}
 
 function getPriBadge(l){var t=today();if(l.followUpDate&&l.followUpDate<t&&['Bounced','Replied'].indexOf(l.status)<0)return'<span class="pri-badge" style="background:rgba(239,68,68,.12);color:#ef4444;border:1px solid rgba(239,68,68,.2)">🔥 Overdue</span>';if(l.followUpDate===t&&['Bounced','Replied'].indexOf(l.status)<0)return'<span class="pri-badge" style="background:rgba(234,179,8,.1);color:#eab308;border:1px solid rgba(234,179,8,.2)">⏰ Today</span>';if(l.status==='Warm Lead')return'<span class="pri-badge" style="background:rgba(255,106,0,.1);color:#ff8c38;border:1px solid rgba(255,106,0,.2)">♨️ Warm</span>';return'';}
+
+// ── Places update helpers ────────────────────────────────────────────────────
+function updateLeadFromPlaces(leadId){
+  var l=leads.find(function(x){return String(x.id)===String(leadId||lpId);});
+  if(!l){flash('Lead not found','bad');return;}
+  var query=l.company+(l.city?' '+l.city:'')+(l.state?' '+l.state:'');
+  flash('Looking up '+l.company+' on Places...');
+  doPlacesLookup(query,function(result){
+    if(!result){
+      doPlacesLookup(l.company,function(r2){
+        if(!r2){flash('No Places result for '+l.company,'bad');return;}
+        applyPlacesResult(l.id,r2);
+      });
+      return;
+    }
+    applyPlacesResult(l.id,result);
+  });
+}
+function applyPlacesResult(leadId,result){
+  var filled=[];
+  leads=leads.map(function(x){
+    if(String(x.id)!==String(leadId))return x;
+    var u=Object.assign({},x);
+    if(result.phone){u.phone=result.phone;filled.push('phone');}
+    if(result.address&&!x.address){u.address=result.address;filled.push('address');}
+    if(result.zip&&!x.zip){u.zip=result.zip;filled.push('zip');}
+    if(result.city&&!x.city){u.city=result.city;}
+    if(result.state&&!x.state){u.state=result.state;}
+    if(result.website&&!x.website){u.website=result.website;filled.push('website');}
+    if(result.reviewCount){u.reviewCount=result.reviewCount;filled.push('reviews');}
+    if(result.reviewQuote&&!x.recentComplaintQuote){u.recentComplaintQuote=result.reviewQuote;filled.push('complaint');}
+    if(result.evidenceLink&&!x.evidenceLink){u.evidenceLink=result.evidenceLink;filled.push('evidence');}
+    if(result.rating){u.notes=(u.notes?u.notes+' | ':'')+'Google: '+result.rating+'⭐ ('+result.reviewCount+' reviews)';}
+    if(!u.timezone){var tz=lookupTimezone(u);if(tz){u.timezone=tz;filled.push('tz');}}
+    u.lastScanDate=today();
+    u.outreachLog=(u.outreachLog||[]).concat([{date:today(),note:'Places auto-fill: '+filled.join(', '),sender:'Places API'}]);
+    return u;
+  });
+  saveLoc();
+  var upd=leads.find(function(x){return String(x.id)===String(leadId);});
+  if(upd)syncLead(upd);
+  if(String(leadId)===String(lpId))renderLp();
+  rl();
+  flash(filled.length?'✓ Updated: '+filled.join(', '):'No new data found');
+}
+function bulkPlacesUpdate(){
+  var targets=leads.filter(function(l){return !l.phone||!l.address;});
+  if(!targets.length){flash('All leads already have phone + address!');return;}
+  if(!confirm('Auto-fill '+targets.length+' leads missing phone/address from Places API? Runs one at a time.'))return;
+  var i=0,updated=0;
+  function next(){
+    if(i>=targets.length){flash('✓ Bulk done: '+updated+'/'+targets.length+' updated');saveLoc();renderAll();return;}
+    var l=targets[i++];
+    flash('Updating '+i+'/'+targets.length+': '+l.company+'...');
+    doPlacesLookup(l.company+(l.city?' '+l.city:'')+(l.state?' '+l.state:''),function(r){
+      if(r){applyPlacesResult(l.id,r);updated++;}
+      setTimeout(next,700);
+    });
+  }
+  next();
+}
 
 // ── Open Now toggle ─────────────────────────────────────────────────────────
 window._openNowFilter=false;
@@ -935,7 +997,7 @@ function togaf(){
         '<button style="background:none;border:none;color:#333;cursor:pointer;font-size:18px" onclick="togaf()">✕</button>'+
       '</div>'+
       '<div class="egrid">'+
-        '<div class="ef"><label>Company *</label><div style="display:flex;gap:6px"><input id="nc" placeholder="Company name" style="flex:1" onblur="autoFillNiche()"><button type="button" onclick="placesLookup()" style="background:rgba(16,185,129,.15);color:#10b981;border:1px solid rgba(16,185,129,.3);border-radius:7px;padding:7px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0" id="places-btn">&#128205; Places</button><button type="button" id="research-btn" onclick="researchCompany()" style="background:rgba(139,92,246,.15);color:#a78bfa;border:1px solid rgba(139,92,246,.3);border-radius:7px;padding:7px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0">&#128269; Research</button></div></div>'+
+        '<div class="ef"><label>Company *</label><div style="display:flex;gap:6px"><input id="nc" placeholder="Company name" style="flex:1" onblur="autoFillNiche()"><button type="button" onclick="placesLookup()" style="background:rgba(16,185,129,.15);color:#10b981;border:1px solid rgba(16,185,129,.3);border-radius:7px;padding:7px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0" id="places-btn">&#128205; Places</button><button type="button" onclick="updateLeadFromPlaces()" style="background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid rgba(59,130,246,.3);border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer">🔄 Auto-Fill</button><button type="button" id="research-btn" onclick="researchCompany()" style="background:rgba(139,92,246,.15);color:#a78bfa;border:1px solid rgba(139,92,246,.3);border-radius:7px;padding:7px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0">&#128269; Research</button></div></div>'+
       '<div id="research-result-box" style="display:none;background:#0d1424;border:1px solid #1e293b;border-radius:10px;padding:12px 14px;margin-bottom:8px"></div>'+
         '<div class="ef"><label>Contact</label><input id="nct" placeholder="Name"></div>'+
         '<div class="ef"><label>Email</label><input id="ne" placeholder="email@co.com" onblur="autoFillNiche()"></div>'+
