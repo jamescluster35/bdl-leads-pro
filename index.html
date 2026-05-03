@@ -396,7 +396,7 @@ const TZ_MAP={
 };
 
 // ── Universal 32-Column Schema (A-AF) ──────────────────────────────────────
-var PLACES_KEY='AIzaSyDpakolSzpixUgIcnws109LjdroucJfNTE'; // BDL Places Key — regenerate if exposed
+var PLACES_KEY='AIzaSyD50n5Dly2xhYA_DYbnn2KdN_d7EIT-sig'; // BDL Places Key — regenerate if exposed
 var SCHEMA_COLS=['id','company','yearEst','address','city','state','zip','phone','website',
   'mobileScore','serviceFormat','profileStatus','leadDestination','markupLoss','frictionFees',
   'reviewDecay','recentComplaintQuote','techFriction','priceRange','reviewCount','strategicPlay',
@@ -3288,69 +3288,96 @@ function placesLookupPanel() {
 }
 
 function doPlacesLookup(query,callback){
-  fetch('https://places.googleapis.com/v1/places:searchText',{
-    method:'POST',
-    headers:{
-      'Content-Type':'application/json',
-      'X-Goog-Api-Key':PLACES_KEY,
-      'X-Goog-FieldMask':'places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.reviews,places.addressComponents'
-    },
-    body:JSON.stringify({textQuery:query,languageCode:'en',maxResultCount:1})
-  })
-  .then(function(r){return r.json();})
-  .then(function(data){
-    if(!data.places||!data.places.length){callback(null);return;}
-    var p=data.places[0];
-    // ── Parse address components ────────────────────────────
-    var street='',cityPart='',stateCode='',zipCode='',countryCode='';
-    var comps=p.addressComponents||[];
-    comps.forEach(function(c){
-      var types=c.types||[];
-      if(types.indexOf('street_number')>=0)street=c.longText+' ';
-      if(types.indexOf('route')>=0)street+=c.longText;
-      if(types.indexOf('locality')>=0||types.indexOf('postal_town')>=0)cityPart=c.longText;
-      if(types.indexOf('administrative_area_level_1')>=0)stateCode=c.shortText;
-      if(types.indexOf('postal_code')>=0)zipCode=c.longText;
-      if(types.indexOf('country')>=0)countryCode=c.shortText;
+  // Trim and clean query
+  var q=(query||'').trim().replace(/\s+/g,' ');
+  console.log('[Places] Searching for:',q);
+
+  function doFetch(searchQuery,isFallback){
+    fetch('https://places.googleapis.com/v1/places:searchText',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'X-Goog-Api-Key':PLACES_KEY,
+        'X-Goog-FieldMask':'places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.reviews,places.addressComponents'
+      },
+      body:JSON.stringify({textQuery:searchQuery,languageCode:'en',maxResultCount:3})
+    })
+    .then(function(r){return r.json();})
+    .then(function(data){
+      console.log('[Places] Raw response:',JSON.stringify(data).substring(0,400));
+      if(!data.places||!data.places.length){
+        // If first attempt failed, try fallback with just company name
+        if(!isFallback){
+          var companyOnly=searchQuery.split(' ').slice(0,3).join(' ');
+          console.log('[Places] Fallback query:',companyOnly);
+          doFetch(companyOnly,true);
+        } else {
+          callback(null);
+        }
+        return;
+      }
+      var p=data.places[0];
+      console.log('[Places] Found:',p.displayName&&p.displayName.text,p.formattedAddress);
+
+      // ── Parse address components ──────────────────────────
+      var street='',cityPart='',stateCode='',zipCode='',countryCode='';
+      var comps=p.addressComponents||[];
+      comps.forEach(function(c){
+        var types=c.types||[];
+        if(types.indexOf('street_number')>=0)street=c.longText+' ';
+        if(types.indexOf('route')>=0)street+=c.longText;
+        if(types.indexOf('locality')>=0)cityPart=c.longText;
+        if(types.indexOf('postal_town')>=0&&!cityPart)cityPart=c.longText;
+        if(types.indexOf('sublocality_level_1')>=0&&!cityPart)cityPart=c.longText;
+        if(types.indexOf('administrative_area_level_1')>=0)stateCode=c.shortText;
+        if(types.indexOf('postal_code')>=0)zipCode=c.longText;
+        if(types.indexOf('country')>=0)countryCode=c.shortText;
+      });
+      // Fallback: parse formattedAddress string
+      if(!cityPart&&p.formattedAddress){
+        var parts=p.formattedAddress.split(',');
+        street=street||(parts[0]?parts[0].trim():'');
+        cityPart=parts[1]?parts[1].trim():'';
+        var szp=parts[2]?parts[2].trim():'';
+        if(!stateCode)stateCode=szp.split(' ')[0]||'';
+        if(!zipCode)zipCode=szp.split(' ')[1]||'';
+      }
+
+      // ── Best complaint review ────────────────────────────
+      var reviews=p.reviews||[];
+      var complaint='';
+      if(reviews.length){
+        var sorted=reviews.slice().sort(function(a,b){return (a.rating||5)-(b.rating||5);});
+        var rev=sorted[0];
+        if(rev&&rev.text&&rev.text.text)complaint=rev.text.text.substring(0,250);
+      }
+
+      // ── Evidence link ─────────────────────────────────────
+      var placeId=p.id||'';
+      var evLink=placeId?'https://www.google.com/maps/place/?q=place_id:'+placeId:'';
+
+      callback({
+        name:p.displayName&&p.displayName.text?p.displayName.text:'',
+        phone:p.nationalPhoneNumber||'',
+        website:p.websiteUri||'',
+        address:street.trim(),
+        city:cityPart,
+        state:stateCode,
+        zip:zipCode,
+        country:countryCode,
+        rating:p.rating||'',
+        reviewCount:p.userRatingCount||'',
+        reviewQuote:complaint,
+        evidenceLink:evLink
+      });
+    })
+    .catch(function(err){
+      console.error('[Places] Fetch error:',err);
+      callback(null);
     });
-    // Fallback: parse formattedAddress
-    if(!cityPart){
-      var parts=(p.formattedAddress||'').split(',');
-      street=street||(parts[0]?parts[0].trim():'');
-      cityPart=parts[1]?parts[1].trim():'';
-      var szp=parts[2]?parts[2].trim():'';
-      stateCode=stateCode||szp.split(' ')[0]||'';
-      zipCode=zipCode||szp.split(' ')[1]||'';
-    }
-    // ── Best complaint review (lowest rating) ────────────────
-    var reviews=p.reviews||[];
-    var complaint='';
-    if(reviews.length){
-      var sorted=reviews.slice().sort(function(a,b){return (a.rating||5)-(b.rating||5);});
-      var rev=sorted[0];
-      if(rev&&rev.text&&rev.text.text)complaint=rev.text.text.substring(0,250);
-    }
-    // ── Evidence link ─────────────────────────────────────────
-    var placeId=p.id||'';
-    var evLink=placeId?'https://www.google.com/maps/place/?q=place_id:'+placeId:'';
-    callback({
-      phone:p.nationalPhoneNumber||'',
-      website:p.websiteUri||'',
-      address:street.trim(),
-      city:cityPart,
-      state:stateCode,
-      zip:zipCode,
-      country:countryCode,
-      rating:p.rating||'',
-      reviewCount:p.userRatingCount||'',
-      reviewQuote:complaint,
-      evidenceLink:evLink
-    });
-  })
-  .catch(function(err){
-    console.error('Places error:',err);
-    callback(null);
-  });
+  }
+
+  doFetch(q,false);
 }
 
 function showAskMapsImport(){
