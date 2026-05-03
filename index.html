@@ -375,6 +375,53 @@ const TZ_MAP={
   'Bogota':'America/Bogota','Lima':'America/Lima','Mexico City':'America/Mexico_City',
   // Africa
   'Cairo':'Africa/Cairo','Johannesburg':'Africa/Johannesburg','Lagos':'Africa/Lagos',
+  // ── US State codes (2-letter) ──────────────────────────────────────────
+  'AL':'America/Chicago','AK':'America/Anchorage','AZ':'America/Phoenix',
+  'AR':'America/Chicago','CA':'America/Los_Angeles','CO':'America/Denver',
+  'CT':'America/New_York','DE':'America/New_York','FL':'America/New_York',
+  'GA':'America/New_York','HI':'Pacific/Honolulu','ID':'America/Boise',
+  'IL':'America/Chicago','IN':'America/Indiana/Indianapolis',
+  'IA':'America/Chicago','KS':'America/Chicago','KY':'America/Kentucky/Louisville',
+  'LA':'America/Chicago','ME':'America/New_York','MD':'America/New_York',
+  'MA':'America/New_York','MI':'America/Detroit','MN':'America/Chicago',
+  'MS':'America/Chicago','MO':'America/Chicago','MT':'America/Denver',
+  'NE':'America/Chicago','NV':'America/Los_Angeles','NH':'America/New_York',
+  'NJ':'America/New_York','NM':'America/Denver','NY':'America/New_York',
+  'NC':'America/New_York','ND':'America/Chicago','OH':'America/New_York',
+  'OK':'America/Chicago','OR':'America/Los_Angeles','PA':'America/New_York',
+  'RI':'America/New_York','SC':'America/New_York','SD':'America/Chicago',
+  'TN':'America/Chicago','TX':'America/Chicago','UT':'America/Denver',
+  'VT':'America/New_York','VA':'America/New_York','WA':'America/Los_Angeles',
+  'WV':'America/New_York','WI':'America/Chicago','WY':'America/Denver',
+  // ── Canadian provinces ────────────────────────────────────────────────
+  'BC':'America/Vancouver','AB':'America/Edmonton','SK':'America/Regina',
+  'MB':'America/Winnipeg','ON':'America/Toronto','QC':'America/Toronto',
+  'NS':'America/Halifax','NB':'America/Halifax','NL':'America/St_Johns',
+  'PE':'America/Halifax','YT':'America/Whitehorse','NT':'America/Yellowknife',
+  'NU':'America/Rankin_Inlet',
+  // ── UK / Europe country codes ─────────────────────────────────────────
+  'UK':'Europe/London','GB':'Europe/London','IE':'Europe/Dublin',
+  'DE':'Europe/Berlin','FR':'Europe/Paris','ES':'Europe/Madrid',
+  'IT':'Europe/Rome','NL':'Europe/Amsterdam','BE':'Europe/Brussels',
+  'CH':'Europe/Zurich','AT':'Europe/Vienna','SE':'Europe/Stockholm',
+  'NO':'Europe/Oslo','DK':'Europe/Copenhagen','FI':'Europe/Helsinki',
+  'PL':'Europe/Warsaw','CZ':'Europe/Prague','HU':'Europe/Budapest',
+  'PT':'Europe/Lisbon','GR':'Europe/Athens','RO':'Europe/Bucharest',
+  // ── Edge case cities ──────────────────────────────────────────────────
+  'Long Island':'America/New_York','Brooklyn':'America/New_York',
+  'Queens':'America/New_York','Bronx':'America/New_York',
+  'Staten Island':'America/New_York','Hempstead':'America/New_York',
+  'Nassau':'America/New_York','Suffolk':'America/New_York',
+  'Middletown':'America/New_York','Newark':'America/New_York',
+  'Lafayette':'America/Indiana/Indianapolis',
+  'Fort Wayne':'America/Indiana/Indianapolis',
+  'Chatsworth':'America/New_York','Timmins':'America/Toronto',
+  'Fort St. John':'America/Vancouver','Kelowna':'America/Vancouver',
+  'Surrey':'America/Vancouver','Victoria':'America/Vancouver',
+  'Biggin Hill':'Europe/London','Westerham':'Europe/London',
+  'Kent':'Europe/London','Essex':'Europe/London',
+  'Southwestern Ontario':'America/Toronto',
+  'San Jose':'America/Los_Angeles',
   // Legacy US entries kept for backward compat
   'Boston':'America/New_York','New York':'America/New_York','NYC':'America/New_York',
   'Nashville':'America/Chicago','Chicago':'America/Chicago','Dallas':'America/Chicago',
@@ -454,8 +501,11 @@ function normLeads(arr){return arr.map(function(l){
   if(l.priority===undefined)l.priority=5;
   if(!l.contactName)l.contactName=l.contact||'';
   if(!l.contactTitle)l.contactTitle=l.title||'';
-  // Timezone backfill
-  if(!l.timezone){var _btz=lookupTimezone(l);if(_btz)l.timezone=_btz;}
+  // Timezone backfill — also fix invalid IANA IDs
+  if(!l.timezone||!isValidIANA(l.timezone)){
+    var _btz=lookupTimezone({city:l.city,state:l.state,timezone:''});
+    if(_btz)l.timezone=_btz;
+  }
   // Bounce auto-detection from outreachLog
   if(l.status!=='Bounced'){var _log=l.outreachLog||[];for(var _i=0;_i<_log.length;_i++){if(_log[_i].note&&_log[_i].note.toLowerCase().indexOf('bounced')>=0){l.status='Bounced';break;}}}
   ['followUpDate','lastContacted'].forEach(function(k){if(l[k])l[k]=fmtDate(l[k]);});
@@ -484,13 +534,27 @@ function getPrimaryEmail(l){if(!l.contactLog)l.contactLog=[];if(!l.contacts||!l.
 
 // ── Global Timezone Intelligence ───────────────────────────────────────────
 function guessTimezone(l){return lookupTimezone(l);}
+// Valid IANA timezone prefixes
+var VALID_TZ_PREFIXES=['America/','Europe/','Asia/','Africa/','Pacific/','Australia/','Atlantic/','Indian/'];
+function isValidIANA(tz){
+  if(!tz)return false;
+  for(var i=0;i<VALID_TZ_PREFIXES.length;i++){if(tz.indexOf(VALID_TZ_PREFIXES[i])===0)return true;}
+  return false;
+}
 function lookupTimezone(l){
-  if(l.timezone&&l.timezone.indexOf('/')>0)return l.timezone;
+  // Only return existing timezone if it's a valid IANA ID
+  if(l.timezone&&isValidIANA(l.timezone))return l.timezone;
+  // Search by city first, then state
   var keys=[l.city,l.state].filter(Boolean);
   for(var ki=0;ki<keys.length;ki++){
-    var k=String(keys[ki]);
+    var k=String(keys[ki]).trim();
+    // Direct match (handles state codes like 'NY', 'BC', 'UK')
     if(TZ_MAP[k])return TZ_MAP[k];
-    for(var city in TZ_MAP){if(k.toLowerCase().indexOf(city.toLowerCase())>=0)return TZ_MAP[city];}
+    // Partial match
+    for(var city in TZ_MAP){
+      if(k.toLowerCase()===city.toLowerCase())return TZ_MAP[city];
+      if(k.toLowerCase().indexOf(city.toLowerCase())>=0&&city.length>2)return TZ_MAP[city];
+    }
   }
   return null;
 }
@@ -654,7 +718,11 @@ function executeGlobalRepair(){
       var changed=false;
       if(l.contact!==undefined&&!l.contactName){l.contactName=l.contact;changed=true;}
       if(l.title!==undefined&&!l.contactTitle){l.contactTitle=l.title;changed=true;}
-      if(!l.timezone){var tz=lookupTimezone(l);if(tz){l.timezone=tz;changed=true;}}
+      // Fix missing OR invalid timezones
+      if(!l.timezone||!isValidIANA(l.timezone)){
+        var tz=lookupTimezone({city:l.city,state:l.state,timezone:''});
+        if(tz){l.timezone=tz;changed=true;}
+      }
       ['followUpDate','lastContacted','lastScanDate'].forEach(function(k){
         if(l[k]&&!/^\d{4}-\d{2}-\d{2}$/.test(l[k])){var d=new Date(l[k]);if(!isNaN(d.getTime())){l[k]=d.toISOString().split('T')[0];changed=true;}}
       });
@@ -3350,30 +3418,50 @@ function placesLookupPanel() {
 }
 
 function doPlacesLookup(query,callback){
-  // Trim and clean query
   var q=(query||'').trim().replace(/\s+/g,' ');
-  console.log('[Places] Searching for:',q);
+  console.log('[Places] Query:',q);
 
   function doFetch(searchQuery,isFallback){
+    var body={
+      textQuery:searchQuery,
+      maxResultCount:1
+    };
+    // Add location bias if we have city context (improves results)
     fetch('https://places.googleapis.com/v1/places:searchText',{
       method:'POST',
       headers:{
         'Content-Type':'application/json',
         'X-Goog-Api-Key':PLACES_KEY,
-        'X-Goog-FieldMask':'places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.reviews,places.addressComponents'
+        // reviews removed — requires extra Places API billing tier
+        'X-Goog-FieldMask':'places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.addressComponents'
       },
-      body:JSON.stringify({textQuery:searchQuery,languageCode:'en',maxResultCount:3})
+      body:JSON.stringify(body)
     })
-    .then(function(r){return r.json();})
+    .then(function(r){
+      if(!r.ok){
+        return r.json().then(function(e){
+          console.error('[Places] HTTP '+r.status,JSON.stringify(e));
+          flash('Places API error '+r.status+': '+(e.error&&e.error.message||'Check console'),'bad');
+          callback(null);
+          throw new Error('http error');
+        });
+      }
+      return r.json();
+    })
     .then(function(data){
-      console.log('[Places] Raw response:',JSON.stringify(data).substring(0,400));
-      if(!data.places||!data.places.length){
-        // If first attempt failed, try fallback with just company name
+      console.log('[Places] Response:',JSON.stringify(data).substring(0,500));
+      if(!data||!data.places||!data.places.length){
         if(!isFallback){
-          var companyOnly=searchQuery.split(' ').slice(0,3).join(' ');
-          console.log('[Places] Fallback query:',companyOnly);
-          doFetch(companyOnly,true);
+          // Fallback: try first 2-3 words only
+          var short=searchQuery.split(' ').slice(0,3).join(' ');
+          if(short!==searchQuery){
+            console.log('[Places] Fallback:',short);
+            doFetch(short,true);
+          } else {
+            callback(null);
+          }
         } else {
+          console.warn('[Places] No results for:',searchQuery);
           callback(null);
         }
         return;
@@ -3381,43 +3469,29 @@ function doPlacesLookup(query,callback){
       var p=data.places[0];
       console.log('[Places] Found:',p.displayName&&p.displayName.text,p.formattedAddress);
 
-      // ── Parse address components ──────────────────────────
+      // ── Parse address ───────────────────────────────────
       var street='',cityPart='',stateCode='',zipCode='',countryCode='';
-      var comps=p.addressComponents||[];
-      comps.forEach(function(c){
-        var types=c.types||[];
-        if(types.indexOf('street_number')>=0)street=c.longText+' ';
-        if(types.indexOf('route')>=0)street+=c.longText;
-        if(types.indexOf('locality')>=0)cityPart=c.longText;
-        if(types.indexOf('postal_town')>=0&&!cityPart)cityPart=c.longText;
-        if(types.indexOf('sublocality_level_1')>=0&&!cityPart)cityPart=c.longText;
-        if(types.indexOf('administrative_area_level_1')>=0)stateCode=c.shortText;
-        if(types.indexOf('postal_code')>=0)zipCode=c.longText;
-        if(types.indexOf('country')>=0)countryCode=c.shortText;
+      (p.addressComponents||[]).forEach(function(c){
+        var t=c.types||[];
+        if(t.indexOf('street_number')>=0)street=c.longText+' ';
+        if(t.indexOf('route')>=0)street+=c.longText;
+        if(t.indexOf('locality')>=0)cityPart=c.longText;
+        if(t.indexOf('postal_town')>=0&&!cityPart)cityPart=c.longText;
+        if(t.indexOf('sublocality_level_1')>=0&&!cityPart)cityPart=c.longText;
+        if(t.indexOf('administrative_area_level_1')>=0)stateCode=c.shortText;
+        if(t.indexOf('postal_code')>=0)zipCode=c.longText;
+        if(t.indexOf('country')>=0)countryCode=c.shortText;
       });
-      // Fallback: parse formattedAddress string
       if(!cityPart&&p.formattedAddress){
-        var parts=p.formattedAddress.split(',');
-        street=street||(parts[0]?parts[0].trim():'');
-        cityPart=parts[1]?parts[1].trim():'';
-        var szp=parts[2]?parts[2].trim():'';
+        var pts=p.formattedAddress.split(',');
+        street=street||(pts[0]?pts[0].trim():'');
+        cityPart=pts[1]?pts[1].trim():'';
+        var szp=pts[2]?pts[2].trim():'';
         if(!stateCode)stateCode=szp.split(' ')[0]||'';
         if(!zipCode)zipCode=szp.split(' ')[1]||'';
       }
 
-      // ── Best complaint review ────────────────────────────
-      var reviews=p.reviews||[];
-      var complaint='';
-      if(reviews.length){
-        var sorted=reviews.slice().sort(function(a,b){return (a.rating||5)-(b.rating||5);});
-        var rev=sorted[0];
-        if(rev&&rev.text&&rev.text.text)complaint=rev.text.text.substring(0,250);
-      }
-
-      // ── Evidence link ─────────────────────────────────────
       var placeId=p.id||'';
-      var evLink=placeId?'https://www.google.com/maps/place/?q=place_id:'+placeId:'';
-
       callback({
         name:p.displayName&&p.displayName.text?p.displayName.text:'',
         phone:p.nationalPhoneNumber||'',
@@ -3429,16 +3503,16 @@ function doPlacesLookup(query,callback){
         country:countryCode,
         rating:p.rating||'',
         reviewCount:p.userRatingCount||'',
-        reviewQuote:complaint,
-        evidenceLink:evLink
+        reviewQuote:'',
+        evidenceLink:placeId?'https://www.google.com/maps/place/?q=place_id:'+placeId:''
       });
     })
     .catch(function(err){
-      console.error('[Places] Fetch error:',err);
+      if(err&&err.message==='http error')return;
+      console.error('[Places] Error:',err);
       callback(null);
     });
   }
-
   doFetch(q,false);
 }
 
