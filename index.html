@@ -39,7 +39,87 @@
 .kb-sum-val{font-size:20px;font-weight:900;letter-spacing:-1px}
 .kb-sum-lbl{font-size:10px;color:#475569;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
 
-@media(max-width:768px){.hacts .hb-g{display:none}.hacts .hb-o{display:none}#ulbl{display:none}.syns{display:none}.hdr{padding:10px 14px}.brand h1{font-size:15px}.hacts{gap:5px}.hb{font-size:11px;padding:6px 10px}#ai-magic-btn{padding:6px 10px}#mobile-reload-bar{display:flex!important}.main{padding:8px 12px;padding-bottom:100px}#larea{padding-bottom:100px}.stats{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}.sc-val{font-size:20px}.sc-body{padding:10px 12px 8px}.tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}.tab{white-space:nowrap;font-size:11px;padding:7px 12px}.filters{flex-wrap:wrap;gap:6px;padding:6px 0}#srch{width:100%;flex:1 1 100%;font-size:14px;padding:9px 12px}.filters input,.filters select{font-size:12px;padding:7px 9px;border-radius:8px}.addb{padding:8px 12px;font-size:12px;border-radius:8px}.twrap{border:none;border-radius:0;overflow:visible;background:transparent}table,tbody{display:block;width:100%}thead{display:none}tbody{display:flex;flex-direction:column;gap:8px}tbody tr{display:flex;flex-direction:column;background:#0a0a0a!important;border:1px solid #1a1a1a;border-radius:14px;padding:12px 14px;animation:cardIn .25s ease both;transform:none!important;transition:border-color .2s}tbody tr:hover{background:#0d0d0d!important;border-color:#2a2a2a;transform:none!important}td{display:block;border:none!important;padding:2px 0!important;background:transparent!important}td:nth-child(1){display:none}td:nth-child(6),td:nth-child(7),td:nth-child(8),td:nth-child(10){display:none}td:nth-child(3){font-size:14px;font-weight:800;color:#e2e8f0;margin-bottom:2px}td:nth-child(4){font-size:12px;color:#64748b;margin-bottom:6px}td:nth-child(5){margin-bottom:8px}td:nth-child(5) .ssel{width:100%;border-radius:8px;padding:7px 10px;font-size:12px}td:nth-child(9){display:flex;gap:6px}.ab{padding:8px 14px;font-size:12px;border-radius:8px;flex:1;text-align:center}#app.lp{overflow:visible}#lp{width:100vw;right:-100vw;border-radius:0;top:0}.lp-foot{padding:12px 16px;gap:6px;position:sticky;bottom:0;background:#000;z-index:10}.lp-save,.lp-del,.lp-fu-btn{padding:12px;font-size:12px;border-radius:10px}.dcards{grid-template-columns:repeat(2,1fr);gap:8px}#ai-panel{width:100vw;border-radius:14px 14px 0 0}#su-sheet{border-radius:16px 16px 0 0}}</style>
+@media(max-width:768px){.hacts .hb-g{display:none}.hacts .hb-o{display:none}#ulbl{display:none}.syns{display:none}.hdr{padding:10px 14px}.brand h1{font-size:15px}.hacts{gap:5px}.hb{font-size:11px;padding:6px 10px}#ai-magic-btn{padding:6px 10px}#mobile-reload-bar{display:flex!important}.main{padding:8px 12px;padding-bottom:100px}#larea{padding-bottom:100px}.stats{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}.sc-val{font-size:20px}.sc-body{padding:10px 12px 8px}.tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}.tab{white-space:nowrap;font-size:11px;padding:7px 12px}.filters{flex-wrap:wrap;gap:6px;padding:6px 0}#srch{width:100%;flex:1 1 100%;font-size:14px;padding:9px 12px}.filters input,.filters select{font-size:12px;padding:7px 9px;border-radius:8px}.addb{padding:8px 12px;font-size:12px;border-radius:8px}.twrap{border:none;border-radius:0;overflow:visible;background:transparent}table,tbody{display:block;width:100%}thead{display:none}tbody{display:flex;flex-direction:column;gap:8px}tbody tr{display:flex;flex-direction:column;background:#0a0a0a!important;border:1px solid #1a1a1a;border-radius:14px;padding:12px 14px;animation:cardIn .25s ease both;transform:none!important;transition:border-color .2s}tbody tr:hover{background:#0d0d0d!important;border-color:#2a2a2a;transform:none!important}td{display:block;border:none!important;padding:2px 0!important;background:transparent!important}td:nth-child(1){display:none}td:nth-child(6),td:nth-child(7),td:nth-child(8),td:nth-child(10){display:none}td:nth-child(3){font-size:14px;font-weight:800;color:#e2e8f0;margin-bottom:2px}td:nth-child(4){font-size:12px;color:#64748b;margin-bottom:6px}td:nth-child(5){margin-bottom:8px}td:nth-child(5) .ssel{width:100%;border-radius:8px;padding:7px 10px;font-size:12px}td:nth-child(9){display:flex;gap:6px}.ab{padding:8px 14px;font-size:12px;border-radius:8px;flex:1;text-align:center}#app.lp{overflow:visible}#lp{width:100vw;right:-100vw;border-radius:0;top:0}.lp-foot{padding:12px 16px;gap:6px;position:sticky;bottom:0;background:#000;z-index:10}.lp-save,.lp-del,.lp-fu-btn{padding:12px;font-size:12px;border-radius:10px}.dcards{grid-template-columns:repeat(2,1fr);gap:8px}#ai-panel{width:100vw;border-radius:14px 14px 0 0}#su-sheet{border-radius:16px 16px 0 0}}
+/* ── Task-Based Page Layout ─────────────────────────────────────────── */
+#app.page-mode{display:grid;grid-template-rows:52px 1fr;grid-template-columns:220px 1fr;height:100vh;overflow:hidden}
+#topbar{grid-column:1/-1;grid-row:1;display:flex;align-items:center;padding:0 18px;background:#000;border-bottom:1px solid #1a1a1a;z-index:100;gap:12px}
+#topbar .brand{display:flex;align-items:center;gap:10px;flex-shrink:0}
+#topbar h1{font-size:15px;font-weight:800;letter-spacing:-.3px;white-space:nowrap}
+#topbar h1 em{color:var(--orange3);font-size:11px;font-weight:500;font-style:normal}
+#topbar .tb-status{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+#topbar .tb-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
+#topbar .tb-btn{background:rgba(100,116,139,.1);color:#94a3b8;border:1px solid #1e293b;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .2s}
+#topbar .tb-btn:hover{background:rgba(100,116,139,.2);color:#e2e8f0}
+#topbar .tb-btn.orange{background:rgba(255,106,0,.1);color:var(--orange3);border-color:rgba(255,106,0,.2)}
+#topbar .tb-btn.orange:hover{background:rgba(255,106,0,.2)}
+/* Sidebar */
+#sidebar{grid-column:1;grid-row:2;background:#05080f;border-right:1px solid #1a1a1a;display:flex;flex-direction:column;overflow:hidden}
+#sidebar .nav-section{padding:10px 10px 0;flex:1}
+#sidebar .nav-section label{font-size:9px;font-weight:700;color:#334155;letter-spacing:1.5px;text-transform:uppercase;padding:0 8px;display:block;margin-bottom:4px}
+.pg-btn{width:100%;display:flex;align-items:center;gap:10px;padding:9px 12px;border:none;background:transparent;color:#64748b;font-size:12px;font-weight:600;cursor:pointer;border-radius:8px;text-align:left;transition:all .15s;position:relative}
+.pg-btn:hover{background:rgba(255,255,255,.04);color:#94a3b8}
+.pg-btn.active{background:rgba(255,106,0,.08);color:var(--orange3)}
+.pg-btn.active::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:3px;background:var(--orange);border-radius:0 3px 3px 0}
+.pg-btn .pg-ico{font-size:16px;width:20px;text-align:center;flex-shrink:0}
+.pg-btn .pg-badge{margin-left:auto;background:var(--orange);color:#000;font-size:9px;font-weight:800;border-radius:10px;padding:1px 6px;min-width:18px;text-align:center}
+#sidebar .nav-divider{height:1px;background:#1a1a1a;margin:8px 10px}
+#sidebar .nav-bottom{padding:10px;border-top:1px solid #1a1a1a}
+/* Page content */
+#page-content{grid-column:2;grid-row:2;overflow:hidden;display:flex;flex-direction:column}
+.page-view{display:none;flex:1;overflow:hidden;flex-direction:column}
+.page-view.active{display:flex}
+.page-hdr{padding:14px 20px 10px;border-bottom:1px solid #1a1a1a;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:#000}
+.page-hdr h2{font-size:15px;font-weight:800;color:#e2e8f0;margin:0}
+.page-hdr p{font-size:11px;color:#475569;margin:2px 0 0}
+.page-hdr-actions{display:flex;gap:6px;align-items:center}
+.page-body{flex:1;overflow-y:auto;padding:16px 20px}
+/* Pipeline page */
+#page-pipeline{overflow:hidden}
+#page-pipeline .page-body{padding:0;display:flex;flex-direction:column;overflow:hidden}
+#pipeline-filters{padding:10px 16px;border-bottom:1px solid #1a1a1a;display:flex;gap:8px;align-items:center;flex-wrap:wrap;flex-shrink:0;background:#03060e}
+#pipeline-filters input,#pipeline-filters select{background:#0a0f1e;border:1px solid #1e293b;border-radius:6px;padding:6px 10px;color:#e2e8f0;font-size:12px;outline:none}
+#pipeline-filters input{flex:1;min-width:160px}
+#pipeline-list{flex:1;overflow-y:auto;padding:0}
+/* Research page */
+.research-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.res-card{background:#05080f;border:1px solid #1e293b;border-radius:10px;padding:14px}
+.res-card h3{font-size:12px;font-weight:700;color:#e2e8f0;margin:0 0 6px}
+.res-card p{font-size:11px;color:#64748b;margin:0 0 10px;line-height:1.5}
+.res-btn{background:linear-gradient(135deg,#ff6a00,#e85000);color:#fff;border:none;border-radius:7px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;width:100%;transition:opacity .2s}
+.res-btn:hover{opacity:.85}
+.res-btn.blue{background:linear-gradient(135deg,#3b82f6,#1d4ed8)}
+.res-btn.purple{background:linear-gradient(135deg,#8b5cf6,#6d28d9)}
+.res-btn.green{background:linear-gradient(135deg,#10b981,#059669)}
+.res-progress{height:4px;background:#1e293b;border-radius:2px;margin-top:10px;overflow:hidden}
+.res-progress-bar{height:100%;background:linear-gradient(90deg,#ff6a00,#ff8c38);border-radius:2px;transition:width .3s;width:0%}
+.res-status{font-size:11px;color:#64748b;margin-top:6px;min-height:16px}
+/* Intelligence page */
+.intel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.intel-kpi{background:#05080f;border:1px solid #1e293b;border-radius:10px;padding:14px}
+.intel-kpi .val{font-size:24px;font-weight:800;color:#e2e8f0;line-height:1}
+.intel-kpi .lbl{font-size:11px;color:#64748b;margin-top:4px}
+/* Settings page */
+.settings-section{background:#05080f;border:1px solid #1e293b;border-radius:10px;padding:14px;margin-bottom:12px}
+.settings-section h3{font-size:12px;font-weight:700;color:#e2e8f0;margin:0 0 10px}
+/* Lead panel adjustment for sidebar layout */
+#app.page-mode #lp{margin-right:0;width:460px;border-left:1px solid #1a1a1a}
+/* Mobile: bottom nav */
+@media(max-width:768px){
+  #app.page-mode{grid-template-rows:48px 1fr 56px;grid-template-columns:1fr}
+  #sidebar{grid-column:1;grid-row:3;border-right:none;border-top:1px solid #1a1a1a;flex-direction:row}
+  #sidebar .nav-section{display:flex;flex-direction:row;padding:6px;gap:2px;flex:1}
+  #sidebar .nav-section label{display:none}
+  #sidebar .nav-divider{display:none}
+  #sidebar .nav-bottom{display:none}
+  .pg-btn{flex-direction:column;gap:2px;padding:6px 4px;font-size:9px;border-radius:6px;min-width:0;flex:1;justify-content:center;align-items:center}
+  .pg-btn .pg-ico{font-size:18px;width:auto}
+  .pg-btn.active::before{display:none}
+  #page-content{grid-column:1;grid-row:2}
+  #page-pipeline .lp{width:100vw;right:0;left:0}
+  .research-grid{grid-template-columns:1fr}
+  .intel-grid{grid-template-columns:1fr 1fr}
+}
+</style>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://apis.google.com/js/api.js" async defer></script>
 </head>
@@ -78,191 +158,228 @@
 </div>
 
 <div id="app" class="h">
-  <div class="hdr">
+  <div id="topbar">
     <div class="brand">
-      <div class="logo">
+      <div class="logo" style="width:30px;height:30px;flex-shrink:0">
         <div class="logo-ring"></div>
-        <div class="logo-inner"><div class="logo-b">B</div><div class="logo-dl">DL</div></div>
+        <div class="logo-inner" style="border-radius:7px"><div class="logo-b">B</div><div class="logo-dl">DL</div></div>
       </div>
-      <div class="brand-txt">
-        <h1>BDL Leads <em>Pro</em></h1>
-        <p id="lcount"></p>
-      </div>
+      <h1>BDL Leads <em>Pro</em></h1>
     </div>
-    <div class="hacts">
-      
+    <div class="tb-status">
       <div class="syns"><span id="sdot"></span><span id="stxt">Ready</span></div>
-      <span id="fmsg" class="h"></span>
-      <span id="ulbl"></span>
-      <button class="hb hb-o" onclick="copyForClaude()" title="Copy pipeline summary to paste into Claude.ai">📋 Copy for Claude</button>
-      <button class="hb hb-g" onclick="reloadSheets()">🔄 Reload</button>
-      <button class="hb hb-g" onclick="exportCSV()" title="Download all leads as CSV">⬇️ CSV</button>
-      <button class="hb" onclick="toggleSenderPanel()" title="Manage sender emails" style="background:rgba(100,116,139,.1);color:#94a3b8;border:1px solid #1e293b">⚙️ Senders</button>
-      <button class="hb hb-o" onclick="syncAll()">☁️ Sync All</button>
-      <button class="hb hb-g" onclick="logout()">Sign Out</button>
-      <button class="hb" style="background:rgba(16,185,129,.1);color:#34d399;border:1px solid rgba(16,185,129,.2)" onclick="runHealthCheck()" title="App Health Check">🩺 Health</button>
-      <button class="hb" style="background:rgba(16,185,129,.1);color:#34d399;border:1px solid rgba(16,185,129,.2)" onclick="bulkPlacesUpdate()" title="Auto-fill phone+address for leads missing data">📍 Bulk Places</button>
-      <button class="hb" style="background:rgba(139,92,246,.1);color:#a78bfa;border:1px solid rgba(139,92,246,.2)" onclick="executeGlobalRepair()" title="Re-align all tabs to 32-col schema">🔧 Repair</button>
-      <div class="ai-btn-wrap">
-        <div class="ai-tip">AI Assistant</div>
-        <button id="ai-magic-btn" onclick="toggleAI()" title="AI Lead Assistant">
-          <span class="ai-plane">✈</span>
-          <span class="ai-lbl">AI</span>
-          <span class="ai-dots"><span class="ai-dot"></span><span class="ai-dot"></span><span class="ai-dot"></span></span>
-        </button>
+      <span id="fmsg" class="h" style="font-size:11px"></span>
+      <span id="ulbl" style="font-size:11px;color:#475569"></span>
+    </div>
+    <div class="tb-actions">
+      <button class="tb-btn orange" onclick="syncAll()">☁️ Sync</button>
+      <button class="tb-btn" onclick="reloadSheets()">🔄</button>
+      <button class="tb-btn" onclick="exportCSV()" title="Download CSV">⬇️ CSV</button>
+      <div class="ai-btn-wrap" style="display:none"><div class="ai-tip">AI</div>
+        <button id="ai-magic-btn" onclick="toggleAI()" title="AI Assistant" style="padding:5px 10px;font-size:11px"><span class="ai-plane">✈</span><span class="ai-lbl">AI</span><span class="ai-dots"><span class="ai-dot"></span><span class="ai-dot"></span><span class="ai-dot"></span></span></button>
       </div>
+      <button class="tb-btn" onclick="logout()" style="color:#ef4444">Sign Out</button>
     </div>
   </div>
 
-  <div class="main">
-    <div class="stats" id="scards"></div>
-    <div class="tabs-row">
-      <div class="tabs">
-        <button class="tab on" onclick="stab('leads',this)">📋 Leads</button>
-        <button class="tab" onclick="stab('clients',this)">🏆 Clients</button>
-        <button class="tab" onclick="stab('dashboard',this)">📊 Dashboard</button>
-        <button class="tab" onclick="stab('gmail',this)">📧 Gmail</button>
-        <button class="tab" id="del-tab-btn" onclick="stab('deleted',this)">Deleted</button>
-        <button class="tab" id="arc-tab-btn" onclick="stab('archived',this)">&#128190; Archived</button>
-        <button class="tab" id="kb-tab-btn" onclick="stab('kanban',this)">&#128203; Pipeline</button>
-      </div>
+  <div id="sidebar">
+    <div class="nav-section">
+      <label>Workspace</label>
+      <button class="pg-btn active" onclick="showPage('pipeline',this)" id="pgbtn-pipeline">
+        <span class="pg-ico">🎯</span>Pipeline
+        <span class="pg-badge" id="pg-badge-pipeline">0</span>
+      </button>
+      <button class="pg-btn" onclick="showPage('research',this)" id="pgbtn-research">
+        <span class="pg-ico">🔍</span>Research
+      </button>
+      <button class="pg-btn" onclick="showPage('outreach',this)" id="pgbtn-outreach">
+        <span class="pg-ico">✉️</span>Outreach
+      </button>
+      <button class="pg-btn" onclick="showPage('intelligence',this)" id="pgbtn-intelligence">
+        <span class="pg-ico">📊</span>Intelligence
+      </button>
     </div>
-
-    <div id="tab-leads">
-      <div id="sender-settings-panel" style="display:none;background:#0d1424;border:1px solid #1e293b;border-radius:10px;padding:14px;margin-bottom:10px;">
-        <div id="sender-settings"></div>
-      </div>
-      <div id="alerts"></div>
-      <div class="filters">
-        <input id="srch" placeholder="🔍 Search company, contact, #…" oninput="debounceSearch()">
-        <select id="fst" onchange="rl()">
-          <option value="All">All Status</option>
-          <option>Pending</option><option>Sent</option><option>Warm Lead</option><option>Bounced</option><option>Replied</option>
-        </select>
-        <input id="fni" list="niche-list" placeholder="All Niches" oninput="rl()" style="background:#111;border:1px solid #1f1f1f;border-radius:var(--rx);padding:7px 11px;color:var(--text);outline:none;width:120px">
-        <select id="fpri" onchange="rl()">
-          <option value="">All Leads</option>
-          <option value="overdue">🔥 Overdue</option>
-          <option value="today">⏰ Today</option>
-          <option value="warm">♨️ Warm Leads</option>
-          <option value="replied">💬 Replied</option>
-          <option value="dm">✅ Decision Makers</option>
-          <option value="nodm">❓ No DM Confirmed</option>
-        </select>
-        <select id="fsender" onchange="rl()" style="max-width:160px">
-          <option value="">All Senders</option>
-          <option value="skinnerdonald">Skinner</option>
-          <option value="michaelbrauns">Michael</option>
-        </select>
-        <input id="f-trigger" list="trigger-list" placeholder="All Triggers" oninput="rl()" style="background:#111;border:1px solid #1f1f1f;border-radius:var(--rx);padding:7px 11px;color:var(--text);outline:none;width:130px">        <datalist id="trigger-list"><option value="Billing Issues"><option value="Maintenance Lag"><option value="Automated Loop Failures"><option value="Communication Gap"><option value="No Response"><option value="Poor Reviews"><option value="High Turnover"></datalist>        <button class="addb" onclick="togaf()">+ Add Lead</button>
-        <button class="addb" style="background:linear-gradient(135deg,#3b82f6,#6366f1);margin-left:6px" onclick="trigImport()">⬆ Import CSV</button>
-        <button class="addb" style="background:linear-gradient(135deg,#0ea5e9,#6366f1);margin-left:6px" onclick="showQuickImport()">⚡ Quick Emails</button>        <button class="addb" style="background:linear-gradient(135deg,#10b981,#059669);margin-left:6px" onclick="showAskMapsImport()">📍 Ask Maps</button>
-        <button id="open-now-btn" class="addb" style="background:rgba(34,197,94,.1);color:#4ade80;border:1px solid rgba(34,197,94,.2);margin-left:6px" onclick="toggleOpenNow()" title="Show only leads where local time is 9 AM–5 PM">🟢 Open Now</button>
-        <input type="file" id="csvFileIn" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleImport(event)">
-      </div>
-      
-<div id="bulk-bar" style="display:none;position:sticky;top:52px;z-index:99;background:#0d1424;border:1px solid rgba(79,70,229,.3);border-radius:10px;padding:8px 14px;margin-bottom:10px;align-items:center;gap:10px;flex-wrap:wrap">
-  <span id="bulk-count" style="font-size:12px;font-weight:700;color:#a78bfa"></span>
-  <select onchange="if(this.value){bulkChangeStatus(this.value);this.value=''}" style="background:#111;border:1px solid #1e293b;border-radius:7px;padding:5px 10px;color:#e2e8f0;font-size:12px;outline:none">
-    <option value="">Change Status…</option>
-    <option>Sent</option><option>Warm Lead</option><option>Bounced</option><option>Replied</option><option>Pending</option>
-  </select>
-  <button onclick="bulkArchive()" style="background:rgba(100,116,139,.1);color:#94a3b8;border:1px solid rgba(100,116,139,.2);border-radius:7px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">📂 Archive</button>
-  <button onclick="bulkDelete()" style="background:rgba(239,68,68,.08);color:#fca5a5;border:1px solid rgba(239,68,68,.2);border-radius:7px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">🗑 Delete</button>
-  <button onclick="clearSelection()" style="background:none;border:none;color:#334155;font-size:12px;cursor:pointer;margin-left:auto">✕ Clear</button>
-</div>
-<div id="afarea"></div>
-
-<div id="adv-filter-bar" style="display:none;background:#0a0f1a;border:1px solid #1e293b;border-radius:10px;padding:10px 14px;margin-bottom:10px;flex-wrap:wrap;gap:8px;align-items:center">
-  <input id="f-date-from" type="date" title="Follow-up from" oninput="rl()" style="background:#111;border:1px solid #1e293b;border-radius:8px;padding:6px 10px;color:#e2e8f0;font-size:12px;outline:none">
-  <input id="f-date-to" type="date" title="Follow-up to" oninput="rl()" style="background:#111;border:1px solid #1e293b;border-radius:8px;padding:6px 10px;color:#e2e8f0;font-size:12px;outline:none">
-  <select id="f-dm" onchange="rl()" style="background:#111;border:1px solid #1e293b;border-radius:8px;padding:6px 10px;color:#e2e8f0;font-size:12px;outline:none">
-    <option value="">All DM</option>
-    <option value="Yes">✅ DM Confirmed</option>
-    <option value="No">❌ No DM</option>
-  </select>
-  <input id="f-score-min" type="number" min="0" max="100" placeholder="Min score" oninput="rl()" style="background:#111;border:1px solid #1e293b;border-radius:8px;padding:6px 10px;color:#e2e8f0;font-size:12px;outline:none;width:90px">
-  <button onclick="clearAdvFilters()" style="background:rgba(239,68,68,.08);color:#fca5a5;border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer">✕ Clear</button>
-  <button onclick="selectAllVisible()" style="background:rgba(79,70,229,.1);color:#a78bfa;border:1px solid rgba(79,70,229,.2);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer">☑ Select All</button>
-  <input id="f-priority-min" type="number" min="0" max="10" placeholder="Min Priority" oninput="rl()" style="background:#111;border:1px solid #1e293b;border-radius:8px;padding:6px 10px;color:#e2e8f0;font-size:12px;outline:none;width:100px">
-  <select id="f-evidence" onchange="rl()" style="background:#111;border:1px solid #1e293b;border-radius:8px;padding:6px 10px;color:#e2e8f0;font-size:12px;outline:none">
-    <option value="">Evidence: All</option><option value="Yes">✅ Has Evidence</option><option value="No">❌ No Evidence</option>
-  </select>
-</div>
-<button id="adv-toggle-btn" onclick="toggleAdvFilters()" style="background:#111;border:1px solid #1a1a1a;border-radius:8px;padding:5px 12px;font-size:11px;color:#475569;cursor:pointer;margin-bottom:8px">⚙ Filters</button>
-      <div id="larea"></div>
-      <p id="lftr" style="text-align:center;color:#222;font-size:11px;margin-top:10px"></p>
+    <div class="nav-divider"></div>
+    <div class="nav-section" style="flex:0">
+      <label>Admin</label>
+      <button class="pg-btn" onclick="showPage('settings',this)" id="pgbtn-settings">
+        <span class="pg-ico">⚙️</span>Settings
+      </button>
     </div>
+    <div class="nav-bottom">
+      <div style="font-size:10px;color:#1e293b;text-align:center">BDL Leads Pro v5</div>
+    </div>
+  </div>
 
-    <div id="tab-clients" class="h"><div id="carea"></div></div>
-    <div id="tab-dashboard" class="h"><div id="darea"></div></div>
-    
-    <!-- Gmail Integration Tab -->
-    <div id="tab-gmail" class="h">
-      <div style="max-width:1200px;margin:0 auto">
-        <!-- Gmail Header -->
-        <div style="background:linear-gradient(135deg,#3b82f6 0%,#8b5cf6 100%);padding:30px;border-radius:12px;margin-bottom:30px;color:#fff">
-          <h2 style="font-size:28px;margin-bottom:10px;display:flex;align-items:center;gap:12px">
-            📧 Gmail Integration
-            <span id="gmail-badge" style="font-size:14px;padding:4px 12px;background:rgba(255,255,255,.2);border-radius:20px;font-weight:500">Not Connected</span>
-          </h2>
-          <p style="opacity:.9;font-size:14px;margin-bottom:20px">Auto-detect replies from your sender accounts and update leads instantly</p>
-          <button onclick="scanAllGmailAccounts()" style="background:#fff;color:#3b82f6;border:none;padding:12px 24px;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;box-shadow:0 4px 6px rgba(0,0,0,.1)">
-            🔍 Scan All Accounts Now
-          </button>
+  <div id="page-content">
+
+    <!-- ═══ PAGE: PIPELINE ════════════════════════════════════════════ -->
+    <div class="page-view active" id="page-pipeline">
+      <div class="page-hdr">
+        <div>
+          <h2>🎯 Pipeline</h2>
+          <p id="lcount">Loading leads…</p>
         </div>
-
-        <!-- Diagnostic Section -->
-        <div style="background:rgba(249,115,22,.05);border:1px solid rgba(249,115,22,.2);border-radius:12px;padding:20px;margin-bottom:30px">
-          <h3 style="font-size:16px;margin-bottom:15px;color:var(--text);display:flex;align-items:center;gap:8px">
-            🔧 Setup Verification
-            <span id="test-status" style="font-size:12px;padding:2px 8px;background:rgba(100,116,139,.2);border-radius:12px;color:#94a3b8">Not Tested</span>
-          </h3>
-          <p style="color:#94a3b8;font-size:13px;margin-bottom:15px">Click "Test Setup" to verify your Gmail API configuration before connecting accounts.</p>
-          <button onclick="testGmailSetup()" style="background:rgba(249,115,22,.1);color:#f97316;border:1px solid rgba(249,115,22,.3);padding:10px 20px;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px">
-            Test Setup
-          </button>
-          <div id="test-results" style="margin-top:15px;display:none"></div>
+        <div class="page-hdr-actions">
+          <div id="scards" style="display:flex;gap:8px"></div>
+          <button class="tb-btn" onclick="showAddModal()" style="background:rgba(255,106,0,.1);color:var(--orange3);border-color:rgba(255,106,0,.2)">+ Add Lead</button>
         </div>
-
-        <!-- Connection Status Cards -->
-        <div id="gmail-accounts-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(350px,1fr));gap:20px;margin-bottom:30px">
-          <!-- Populated by JavaScript -->
+      </div>
+      <div class="page-body">
+        <div id="pipeline-filters">
+          <input id="srch" placeholder="🔍 Search company, contact…" oninput="debounceSearch()" style="flex:1;min-width:160px">
+          <select id="fst" onchange="rl()">
+            <option value="All">All Status</option>
+            <option>Pending</option><option>Sent</option><option>Warm Lead</option>
+            <option>Bounced</option><option>Replied</option><option>Active</option>
+            <option>Closed</option><option>Lost</option>
+          </select>
+          <input id="fni" list="niche-list" placeholder="Niche" oninput="rl()" style="width:110px">
+          <datalist id="niche-list"></datalist>
+          <input id="fpri" list="pri-list" placeholder="Priority" oninput="rl()" style="width:90px">
+          <datalist id="pri-list"><option value="High"><option value="Medium"><option value="Low"></datalist>
+          <button id="open-now-btn" onclick="toggleOpenNow()" style="background:rgba(34,197,94,.1);color:#4ade80;border:1px solid rgba(34,197,94,.2);border-radius:6px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">🟢 Open Now</button>
+          <button onclick="toggleAdvFilters()" style="background:rgba(100,116,139,.1);color:#94a3b8;border:1px solid #1e293b;border-radius:6px;padding:6px 10px;font-size:11px;cursor:pointer">⚙️ Filters</button>
         </div>
-
-        <!-- Recent Replies -->
-        <div style="background:#000;border:1px solid #1f1f1f;border-radius:12px;padding:20px">
-          <h3 style="font-size:18px;margin-bottom:15px;color:var(--text)">Recent Replies Detected</h3>
-          <div id="gmail-recent-replies">
-            <p style="color:#64748b;text-align:center;padding:40px">No replies detected yet. Click "Scan All Accounts Now" to check for new replies.</p>
+        <div id="adv-filter-drawer" style="display:none;padding:8px 16px;border-bottom:1px solid #1a1a1a;background:#03060e;display:none;flex-wrap:wrap;gap:6px">
+          <input id="f-date-from" type="date" oninput="rl()" style="background:#0a0f1e;border:1px solid #1e293b;border-radius:6px;padding:5px 8px;color:#e2e8f0;font-size:11px;outline:none">
+          <input id="f-date-to" type="date" oninput="rl()" style="background:#0a0f1e;border:1px solid #1e293b;border-radius:6px;padding:5px 8px;color:#e2e8f0;font-size:11px;outline:none">
+          <select id="f-dm" onchange="rl()" style="background:#0a0f1e;border:1px solid #1e293b;border-radius:6px;padding:5px 8px;color:#e2e8f0;font-size:11px;outline:none">
+            <option value="">DM: All</option><option value="Yes">DM: Yes</option><option value="No">DM: No</option>
+          </select>
+          <input id="f-score-min" type="number" min="0" max="100" placeholder="Min Score" oninput="rl()" style="background:#0a0f1e;border:1px solid #1e293b;border-radius:6px;padding:5px 8px;color:#e2e8f0;font-size:11px;outline:none;width:90px">
+          <input id="f-priority-min" type="number" min="0" max="10" placeholder="Min Priority" oninput="rl()" style="background:#0a0f1e;border:1px solid #1e293b;border-radius:6px;padding:5px 8px;color:#e2e8f0;font-size:11px;outline:none;width:90px">
+          <select id="f-evidence" onchange="rl()" style="background:#0a0f1e;border:1px solid #1e293b;border-radius:6px;padding:5px 8px;color:#e2e8f0;font-size:11px;outline:none">
+            <option value="">Evidence: All</option><option value="Yes">✅ Has Evidence</option><option value="No">❌ No Evidence</option>
+          </select>
+          <button onclick="clearAdvFilters()" style="background:rgba(239,68,68,.1);color:#fca5a5;border:1px solid rgba(239,68,68,.2);border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer">✕ Clear</button>
+          <button onclick="selectAllVisible()" style="background:rgba(79,70,229,.1);color:#a78bfa;border:1px solid rgba(79,70,229,.2);border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer">☑ All</button>
+        </div>
+        <div id="alerts"></div>
+        <div id="sender-settings-panel" style="display:none;background:#0d1424;border:1px solid #1e293b;border-radius:10px;padding:14px;margin:10px 16px 0">
+          <div id="sender-settings"></div>
+        </div>
+        <div id="pipeline-list">
+          <div id="tab-leads" style="padding:0">
+            <div id="lare"></div>
+            <div id="bulk-bar" class="h" style="position:sticky;bottom:0;background:#0a0f1e;border-top:1px solid #1e293b;padding:10px 16px;display:flex;gap:8px;align-items:center;z-index:10"></div>
           </div>
         </div>
+      </div>
+    </div>
 
-        <!-- Setup Instructions (shown if no accounts connected) -->
-        <div id="gmail-setup-prompt" style="background:#0a0a0a;border:1px solid #1f1f1f;border-radius:12px;padding:30px;margin-top:30px;display:none">
-          <h3 style="font-size:20px;margin-bottom:15px;color:var(--text)">🚀 Get Started</h3>
-          <p style="color:#94a3b8;margin-bottom:20px;line-height:1.6">
-            To enable Gmail integration, you'll need to set up Google Cloud credentials (one-time, ~15 minutes).<br>
-            Once set up, you can connect all your sender accounts and automatically detect replies.
-          </p>
-          <ol style="color:#94a3b8;line-height:2;margin-left:20px">
-            <li>Create Google Cloud Project</li>
-            <li>Enable Gmail API</li>
-            <li>Get OAuth Client ID + API Key</li>
-            <li>Update credentials in the code</li>
-            <li>Connect your sender accounts</li>
-          </ol>
-          <p style="color:#94a3b8;margin-top:20px">
-            📖 See <strong style="color:var(--orange)">GMAIL_SETUP_GUIDE.md</strong> for detailed step-by-step instructions.
-          </p>
+    <!-- ═══ PAGE: RESEARCH ════════════════════════════════════════════ -->
+    <div class="page-view" id="page-research">
+      <div class="page-hdr">
+        <div><h2>🔍 Research</h2><p>Import leads and enrich with real data</p></div>
+        <div class="page-hdr-actions">
+          <button class="tb-btn" onclick="showAskMapsImport()" style="background:rgba(16,185,129,.1);color:#34d399;border-color:rgba(16,185,129,.2)">📍 Ask Maps Import</button>
+          <button class="tb-btn" onclick="bulkPlacesUpdate()" style="background:rgba(59,130,246,.1);color:#60a5fa;border-color:rgba(59,130,246,.2)">📍 Bulk Places</button>
+          <button class="tb-btn" onclick="runBatchResearch()" style="background:rgba(139,92,246,.1);color:#a78bfa;border-color:rgba(139,92,246,.2)">🤖 Batch Research</button>
+        </div>
+      </div>
+      <div class="page-body">
+        <div class="research-grid">
+          <div class="res-card">
+            <h3>📍 Google Places Enrichment</h3>
+            <p>Auto-fill phone, address, ZIP, rating, and evidence links for all leads missing data.</p>
+            <div id="bulk-places-status" class="res-status"></div>
+            <div class="res-progress"><div class="res-progress-bar" id="places-progress-bar"></div></div>
+            <button class="res-btn green" onclick="bulkPlacesUpdate()" style="margin-top:10px">Run Bulk Places Update</button>
+          </div>
+          <div class="res-card">
+            <h3>⚡ PageSpeed Audit</h3>
+            <p>Run Google PageSpeed on every lead's website. Fills mobile score with real data — provable tech friction.</p>
+            <div id="pagespeed-status" class="res-status"></div>
+            <div class="res-progress"><div class="res-progress-bar" id="pagespeed-progress-bar"></div></div>
+            <button class="res-btn blue" onclick="runBulkPageSpeed()">Run PageSpeed Audit</button>
+          </div>
+          <div class="res-card">
+            <h3>🤖 Gemini Deep Research</h3>
+            <p>Gemini searches the web for each company — finds complaints, BBB entries, reviews. Returns cited proof URLs.</p>
+            <div id="gemini-research-status" class="res-status"></div>
+            <div class="res-progress"><div class="res-progress-bar" id="gemini-progress-bar"></div></div>
+            <button class="res-btn purple" onclick="runBulkGeminiResearch()">Run Gemini Research</button>
+          </div>
+          <div class="res-card">
+            <h3>📊 Research Queue</h3>
+            <p>Leads missing diagnostic data (mobile score, complaint quote, evidence link).</p>
+            <div id="research-queue-count" class="res-status">Calculating…</div>
+            <button class="res-btn" onclick="runBatchResearch()" style="margin-top:10px">🚀 Run All Research</button>
+          </div>
+        </div>
+        <div id="research-results" style="margin-top:16px"></div>
+      </div>
+    </div>
+
+    <!-- ═══ PAGE: OUTREACH ════════════════════════════════════════════ -->
+    <div class="page-view" id="page-outreach">
+      <div class="page-hdr">
+        <div><h2>✉️ Outreach</h2><p>Manage senders and email templates</p></div>
+        <div class="page-hdr-actions">
+          <button class="tb-btn" onclick="toggleSenderPanel()" style="background:rgba(100,116,139,.1);color:#94a3b8;border-color:#1e293b">⚙️ Senders</button>
+        </div>
+      </div>
+      <div class="page-body">
+        <div id="tab-gmail"></div>
+        <div id="outreach-templates" style="margin-top:16px">
+          <h3 style="font-size:13px;font-weight:700;color:#e2e8f0;margin:0 0 12px">✉️ Email Templates <span style="font-size:10px;color:#64748b;font-weight:400">(coming soon)</span></h3>
+          <div style="background:#05080f;border:1px dashed #1e293b;border-radius:10px;padding:24px;text-align:center;color:#334155;font-size:12px">
+            Templates library will be built here next session
+          </div>
         </div>
       </div>
     </div>
-    
-    <div id="tab-deleted" class="h"><div id="del-area"></div></div>
-    <div id="tab-archived" class="h"><div id="arc-area"></div></div>
-    <div id="tab-kanban" class="h"><div id="kb-area" style="overflow-x:auto;padding:4px 0"></div></div>
-  </div>
+
+    <!-- ═══ PAGE: INTELLIGENCE ════════════════════════════════════════ -->
+    <div class="page-view" id="page-intelligence">
+      <div class="page-hdr">
+        <div><h2>📊 Intelligence</h2><p>Pipeline analytics and lead scoring</p></div>
+        <div class="page-hdr-actions">
+          <button class="tb-btn" onclick="stab('dashboard',{classList:{add:function(){},remove:function(){}}})" style="background:rgba(59,130,246,.1);color:#60a5fa;border-color:rgba(59,130,246,.2)">📊 Dashboard</button>
+          <button class="tb-btn" onclick="stab('kanban',{classList:{add:function(){},remove:function(){}}})" style="background:rgba(139,92,246,.1);color:#a78bfa;border-color:rgba(139,92,246,.2)">📋 Kanban</button>
+          <button class="tb-btn" onclick="stab('clients',{classList:{add:function(){},remove:function(){}}})" style="background:rgba(16,185,129,.1);color:#34d399;border-color:rgba(16,185,129,.2)">🏆 Clients</button>
+        </div>
+      </div>
+      <div class="page-body" id="intel-body">
+        <div id="intel-kpis" class="intel-grid"></div>
+        <div id="tab-dashboard"></div>
+        <div id="tab-kanban" class="h" style="margin-top:12px"><div id="kb-area" style="overflow-x:auto;padding:4px 0"></div></div>
+        <div id="tab-clients" class="h"><div id="cl-area"></div></div>
+      </div>
+    </div>
+
+    <!-- ═══ PAGE: SETTINGS ════════════════════════════════════════════ -->
+    <div class="page-view" id="page-settings">
+      <div class="page-hdr">
+        <div><h2>⚙️ Settings</h2><p>Schema, senders, backup, and maintenance</p></div>
+        <div class="page-hdr-actions">
+          <button class="tb-btn" onclick="executeGlobalRepair()" style="background:rgba(139,92,246,.1);color:#a78bfa;border-color:rgba(139,92,246,.2)">🔧 Repair Schema</button>
+          <button class="tb-btn" onclick="runHealthCheck()" style="background:rgba(16,185,129,.1);color:#34d399;border-color:rgba(16,185,129,.2)">🩺 Health Check</button>
+          <button class="tb-btn" onclick="exportCSV()">⬇️ Export CSV</button>
+        </div>
+      </div>
+      <div class="page-body">
+        <div class="settings-section">
+          <h3>📧 Sender Accounts</h3>
+          <div id="sender-settings-panel-settings" style="background:#0d1424;border:1px solid #1e293b;border-radius:8px;padding:12px">
+            <div id="sender-settings-s"></div>
+            <button onclick="toggleSenderPanel()" class="tb-btn" style="margin-top:8px">Manage Senders →</button>
+          </div>
+        </div>
+        <div class="settings-section">
+          <h3>🗑️ Deleted Leads</h3>
+          <div id="tab-deleted"><div id="del-area"></div></div>
+        </div>
+        <div class="settings-section">
+          <h3>📦 Archived Leads</h3>
+          <div id="tab-archived"><div id="arc-area"></div></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /page-content -->
+
 </div>
 
 <div id="lp">
@@ -805,6 +922,235 @@ window.clearAdvFilters=function(){
   rl();
 };
 
+// ── Page Navigation ─────────────────────────────────────────────────────────
+var currentPage='pipeline';
+function showPage(name,btn){
+  document.querySelectorAll('.page-view').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.pg-btn').forEach(function(b){b.classList.remove('active');});
+  var pg=document.getElementById('page-'+name);
+  if(pg)pg.classList.add('active');
+  var pgbtn=btn||document.getElementById('pgbtn-'+name);
+  if(pgbtn)pgbtn.classList.add('active');
+  currentPage=name;
+  if(name==='pipeline')rl();
+  if(name==='research')updateResearchQueue();
+  if(name==='intelligence'){renderDash();}
+  if(name==='settings'){rs();ra();}
+}
+function toggleAdvFilters(){
+  var d=document.getElementById('adv-filter-drawer');
+  if(!d)return;
+  d.style.display=d.style.display==='none'||d.style.display===''?'flex':'none';
+}
+function initPageMode(){
+  var app=document.getElementById('app');
+  if(app)app.classList.add('page-mode');
+  updatePipelineBadge();
+  updateResearchQueue();
+}
+function updatePipelineBadge(){
+  var b=document.getElementById('pg-badge-pipeline');
+  if(!b)return;
+  var t=today();
+  var due=leads.filter(function(l){
+    return l.followUpDate&&l.followUpDate<=t&&l.status!=='Closed'&&l.status!=='Lost';
+  }).length;
+  b.textContent=due||'';
+  b.style.display=due?'':'none';
+}
+function updateResearchQueue(){
+  var el=document.getElementById('research-queue-count');
+  if(!el)return;
+  var missing=leads.filter(function(l){
+    return !l.mobileScore||!l.recentComplaintQuote||!l.evidenceLink;
+  }).length;
+  el.textContent=missing+' leads need research (missing score, complaint, or evidence)';
+}
+
+// ── PageSpeed API (Free — no key needed) ─────────────────────────────────────
+function getPageSpeed(url,callback){
+  if(!url){callback(null);return;}
+  var clean=url.replace(/\/+$/,'');
+  var apiUrl='https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url='+
+    encodeURIComponent(clean)+'&strategy=mobile&category=performance';
+  fetch(apiUrl)
+  .then(function(r){return r.json();})
+  .then(function(data){
+    var score=null,lcp=null,ttfb=null;
+    try{
+      var cats=data.lighthouseResult&&data.lighthouseResult.categories;
+      if(cats&&cats.performance)score=Math.round(cats.performance.score*100);
+      var auds=data.lighthouseResult&&data.lighthouseResult.audits;
+      if(auds){
+        if(auds['largest-contentful-paint'])lcp=auds['largest-contentful-paint'].displayValue;
+        if(auds['server-response-time'])ttfb=auds['server-response-time'].displayValue;
+      }
+    }catch(e){}
+    if(score===null){callback(null);return;}
+    callback({
+      score:score,lcp:lcp,ttfb:ttfb,
+      proofUrl:'https://pagespeed.web.dev/report?url='+encodeURIComponent(clean)
+    });
+  })
+  .catch(function(){callback(null);});
+}
+
+function runBulkPageSpeed(){
+  var targets=leads.filter(function(l){return l.website&&!l.mobileScore;});
+  if(!targets.length){flash('All leads with websites already have a mobile score!');return;}
+  if(!confirm('Run PageSpeed on '+targets.length+' leads? Free API, no key needed.'))return;
+  var i=0,updated=0,failed=0;
+  var bar=document.getElementById('pagespeed-progress-bar');
+  var status=document.getElementById('pagespeed-status');
+  function next(){
+    if(i>=targets.length){
+      if(bar)bar.style.width='100%';
+      if(status)status.textContent=updated+' scored, '+failed+' no website/failed';
+      saveLoc();rl();
+      flash('PageSpeed done: '+updated+' leads scored');
+      return;
+    }
+    var l=targets[i++];
+    var pct=Math.round((i/targets.length)*100);
+    if(bar)bar.style.width=pct+'%';
+    if(status)status.textContent='Auditing '+i+'/'+targets.length+': '+l.company+'...';
+    getPageSpeed(l.website,function(result){
+      if(result){
+        leads=leads.map(function(x){
+          if(String(x.id)!==String(l.id))return x;
+          var u=Object.assign({},x);
+          u.mobileScore=result.score;
+          var fr=[];
+          if(result.score<50)fr.push('Poor mobile ('+result.score+'/100)');
+          if(result.lcp)fr.push('LCP: '+result.lcp);
+          if(result.ttfb)fr.push('Server: '+result.ttfb);
+          if(fr.length)u.techFriction=u.techFriction?u.techFriction+' | '+fr.join(', '):fr.join(', ');
+          if(result.proofUrl&&!x.evidenceLink)u.evidenceLink=result.proofUrl;
+          u.lastScanDate=today();
+          u.lastSender=x.lastSender;
+          u.outreachLog=(u.outreachLog||[]).concat([{
+            date:today(),note:'PageSpeed: '+result.score+'/100'+(result.lcp?' LCP '+result.lcp:''),sender:'[PageSpeed]'
+          }]);
+          return u;
+        });
+        var upd=leads.find(function(x){return String(x.id)===String(l.id);});
+        if(upd)syncLead(upd);
+        updated++;
+      }else{failed++;}
+      setTimeout(next,2500);
+    });
+  }
+  next();
+}
+
+// ── Gemini Deep Research (Web Grounding) ─────────────────────────────────────
+function runGeminiResearch(lead,callback){
+  var key=localStorage.getItem('bdl-gemini-key');
+  if(!key){callback(null,'No Gemini key');return;}
+  var prompt='Research this business for revenue leakage evidence. Company: '+lead.company+
+    (lead.city?', '+lead.city:'')+(lead.state?', '+lead.state:'')+
+    (lead.niche?'. Industry: '+lead.niche:'')+(lead.website?'. Website: '+lead.website:'')+
+    '. Search for customer complaints, bad reviews, BBB entries, billing problems, tech failures.'+
+    ' Return ONLY a raw JSON object: recentComplaintQuote (real quote max 200 chars),'+
+    ' evidenceLink (direct URL to complaint/review), reviewDecay (e.g. Last review 8mo ago or empty),'+
+    ' strategicPlay (1 sentence pitch angle), painPoints (2-3 sentence summary).'+
+    ' Empty string if not found. No markdown. JSON only.';
+  fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+key,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      contents:[{parts:[{text:prompt}]}],
+      tools:[{googleSearch:{}}],
+      generationConfig:{temperature:0.1}
+    })
+  })
+  .then(function(r){return r.json();})
+  .then(function(data){
+    var raw='';
+    try{raw=data.candidates[0].content.parts[0].text.trim();}catch(e){}
+    var clean=raw.replace(/```json|```/g,'').trim();
+    var result;
+    try{result=JSON.parse(clean);}catch(e){callback(null,'Parse error');return;}
+    callback(result,null);
+  })
+  .catch(function(err){callback(null,err.message);});
+}
+
+function runBulkGeminiResearch(){
+  var key=localStorage.getItem('bdl-gemini-key');
+  if(!key){alert('Add your Gemini API key in the AI panel first.');return;}
+  var targets=leads.filter(function(l){
+    return !l.recentComplaintQuote&&l.status!=='Closed'&&l.status!=='Lost';
+  });
+  if(!targets.length){flash('All active leads already have complaint data!');return;}
+  if(!confirm('Run Gemini deep research on '+targets.length+' leads? Uses web search. Free with your Gemini key.'))return;
+  var i=0,updated=0,failed=0;
+  var bar=document.getElementById('gemini-progress-bar');
+  var status=document.getElementById('gemini-research-status');
+  function next(){
+    if(i>=targets.length){
+      if(bar)bar.style.width='100%';
+      if(status)status.textContent=updated+' enriched, '+failed+' failed';
+      saveLoc();rl();
+      flash('Gemini research done: '+updated+' leads enriched');
+      return;
+    }
+    var l=targets[i++];
+    var pct=Math.round((i/targets.length)*100);
+    if(bar)bar.style.width=pct+'%';
+    if(status)status.textContent='Researching '+i+'/'+targets.length+': '+l.company+'...';
+    runGeminiResearch(l,function(result,err){
+      if(result&&!err){
+        leads=leads.map(function(x){
+          if(String(x.id)!==String(l.id))return x;
+          var u=Object.assign({},x);
+          if(result.recentComplaintQuote)u.recentComplaintQuote=result.recentComplaintQuote;
+          if(result.evidenceLink&&!x.evidenceLink)u.evidenceLink=result.evidenceLink;
+          if(result.reviewDecay)u.reviewDecay=result.reviewDecay;
+          if(result.strategicPlay)u.strategicPlay=result.strategicPlay;
+          if(result.painPoints)u.painPoints=result.painPoints;
+          u.lastScanDate=today();
+          u.lastSender=x.lastSender;
+          u.outreachLog=(u.outreachLog||[]).concat([{
+            date:today(),
+            note:'Gemini research: '+(result.recentComplaintQuote?'found complaint':'no complaint found'),
+            sender:'[Gemini]'
+          }]);
+          return u;
+        });
+        var upd=leads.find(function(x){return String(x.id)===String(l.id);});
+        if(upd)syncLead(upd);
+        updated++;
+      }else{failed++;}
+      setTimeout(next,4000);
+    });
+  }
+  next();
+}
+
+function runBatchResearch(){
+  if(!confirm('Run FULL research batch? Places + PageSpeed + Gemini. Takes several minutes for large lists.'))return;
+  bulkPlacesUpdate();
+  setTimeout(function(){runBulkPageSpeed();},3000);
+  setTimeout(function(){runBulkGeminiResearch();},6000);
+}
+
+// ── Revenue Leakage Score ─────────────────────────────────────────────────────
+function calcRevLeakageScore(l){
+  var score=0;
+  var ms=parseInt(l.mobileScore)||0;
+  if(ms>0&&ms<50)score+=30;
+  else if(ms>=50&&ms<70)score+=15;
+  var rating=parseFloat(l.reviewRating||l.rating)||0;
+  if(rating>0&&rating<3.5)score+=25;
+  else if(rating>=3.5&&rating<4.0)score+=12;
+  if(l.reviewDecay)score+=15;
+  if(l.recentComplaintQuote)score+=15;
+  if(l.techFriction)score+=10;
+  if(l.profileStatus&&l.profileStatus.toLowerCase().indexOf('unclaim')>=0)score+=5;
+  return Math.min(score,100);
+}
+
 // SHEETS
 function sheetRead(){return fetch(SHEET_URL+'?_='+Date.now()).then(function(r){return r.json();}).catch(function(){return null;});}
 function sheetWrite(p,retry){
@@ -987,7 +1333,13 @@ function stopClock(){if(clockInterval)clearInterval(clockInterval);}
 function updateClocks(){if(lpId){var l=leads.find(function(x){return String(x.id)===String(lpId);});if(l)renderLpClocks(l);}}
 
 function initNF(){}
-function stab(n,btn){['leads','clients','dashboard','gmail','deleted','archived','kanban'].forEach(function(t){ge('tab-'+t).classList.add('h');});document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('on');});var el=ge('tab-'+n);el.classList.remove('h');el.style.animation='none';requestAnimationFrame(function(){el.style.animation='';});btn.classList.add('on');if(n==='clients')rc();if(n==='dashboard')renderDash();if(n==='deleted')renderDeleted();if(n==='archived')renderArchived();if(n==='kanban')renderKanban();if(n==='gmail')renderGmailTab();}
+function stab(n,btn){
+  // In page mode, stab manages sub-views within Intelligence page
+  var intelTabs=['dashboard','kanban','clients'];
+  var allPageTabs=['leads','clients','dashboard','gmail','deleted','archived','kanban'];
+  allPageTabs.forEach(function(t){var el=ge('tab-'+t);if(el)el.classList.add('h');});
+  document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('on');});
+  var el=ge('tab-'+n);if(!el)return;el.classList.remove('h');el.style.animation='none';requestAnimationFrame(function(){el.style.animation='';});btn.classList.add('on');if(n==='clients')rc();if(n==='dashboard')renderDash();if(n==='deleted')renderDeleted();if(n==='archived')renderArchived();if(n==='kanban')renderKanban();if(n==='gmail')renderGmailTab();}
 function renderAll(){if(!deletedLeads)deletedLeads=[];rs();ra();rl();renderDash();populateNicheList();if(!archivedLeads)archivedLeads=[];ge('lcount').textContent=leads.length+' leads · '+clients.length+' clients'+(deletedLeads.length?' - Deleted:'+deletedLeads.length:'')+(archivedLeads.length?' - Archived:'+archivedLeads.length:'');updateDelTabBadge();updateArchiveTabBadge();}
 
 function rs(){
@@ -1065,6 +1417,7 @@ function ra(){
     if(lastAction.length>60)lastAction=lastAction.substring(0,60)+'…';
     h+='<div style="display:flex;align-items:center;gap:8px;padding:7px 14px;border-bottom:1px solid #0d1424;transition:background .15s" onmouseover="this.style.background=\'#0d1424\'" onmouseout="this.style.background=\'transparent\'">';
     h+=badge;
+    h+=leakageScoreBadge(l);
     h+='<span style="color:#e2e8f0;font-weight:600;font-size:12px;min-width:160px;cursor:pointer" onclick="openLp(\''+l.id+'\')">'+esc(l.company)+'</span>';
     h+='<span style="color:#475569;font-size:11px;flex:1;">'+esc(lastAction)+'</span>';
     h+='<div style="display:flex;gap:4px;">';
@@ -3452,98 +3805,155 @@ function doPlacesLookup(query,callback){
   console.log('[Places] Query:',q);
 
   function doFetch(searchQuery,isFallback){
-    var body={
-      textQuery:searchQuery,
-      maxResultCount:1
-    };
-    // Add location bias if we have city context (improves results)
     fetch('https://places.googleapis.com/v1/places:searchText',{
       method:'POST',
       headers:{
         'Content-Type':'application/json',
         'X-Goog-Api-Key':PLACES_KEY,
-        // reviews removed — requires extra Places API billing tier
         'X-Goog-FieldMask':'places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.addressComponents'
       },
-      body:JSON.stringify(body)
+      body:JSON.stringify({textQuery:searchQuery,maxResultCount:5})
     })
     .then(function(r){
       if(!r.ok){
         return r.json().then(function(e){
-          console.error('[Places] HTTP '+r.status,JSON.stringify(e));
+          console.error('[Places] HTTP '+r.status,e);
           flash('Places API error '+r.status+': '+(e.error&&e.error.message||'Check console'),'bad');
-          callback(null);
-          throw new Error('http error');
+          callback(null);throw new Error('http');
         });
       }
       return r.json();
     })
     .then(function(data){
-      console.log('[Places] Response:',JSON.stringify(data).substring(0,500));
-      if(!data||!data.places||!data.places.length){
+      console.log('[Places] Got '+(data.places&&data.places.length||0)+' results');
+      if(!data.places||!data.places.length){
         if(!isFallback){
-          // Fallback: try first 2-3 words only
           var short=searchQuery.split(' ').slice(0,3).join(' ');
-          if(short!==searchQuery){
-            console.log('[Places] Fallback:',short);
-            doFetch(short,true);
-          } else {
-            callback(null);
-          }
-        } else {
-          console.warn('[Places] No results for:',searchQuery);
-          callback(null);
-        }
+          if(short!==searchQuery){doFetch(short,true);}else{callback(null);}
+        }else{callback(null);}
         return;
       }
-      var p=data.places[0];
-      console.log('[Places] Found:',p.displayName&&p.displayName.text,p.formattedAddress);
 
-      // ── Parse address ───────────────────────────────────
-      var street='',cityPart='',stateCode='',zipCode='',countryCode='';
-      (p.addressComponents||[]).forEach(function(c){
-        var t=c.types||[];
-        if(t.indexOf('street_number')>=0)street=c.longText+' ';
-        if(t.indexOf('route')>=0)street+=c.longText;
-        if(t.indexOf('locality')>=0)cityPart=c.longText;
-        if(t.indexOf('postal_town')>=0&&!cityPart)cityPart=c.longText;
-        if(t.indexOf('sublocality_level_1')>=0&&!cityPart)cityPart=c.longText;
-        if(t.indexOf('administrative_area_level_1')>=0)stateCode=c.shortText;
-        if(t.indexOf('postal_code')>=0)zipCode=c.longText;
-        if(t.indexOf('country')>=0)countryCode=c.shortText;
+      // Score each result against current lead data
+      var l=lpId?leads.find(function(x){return String(x.id)===String(lpId);}):null;
+      var scored=data.places.map(function(p){
+        var sc=0;
+        var addr=(p.formattedAddress||'').toLowerCase();
+        var pname=(p.displayName&&p.displayName.text||'').toLowerCase();
+        if(l){
+          if(l.city&&addr.indexOf(l.city.toLowerCase())>=0)sc+=40;
+          if(l.state&&addr.indexOf(l.state.toLowerCase())>=0)sc+=30;
+          if(l.website&&p.websiteUri){
+            var ld=l.website.replace(/https?:\/\//,'').replace(/www\./,'').split('/')[0].toLowerCase();
+            var pd=p.websiteUri.replace(/https?:\/\//,'').replace(/www\./,'').split('/')[0].toLowerCase();
+            if(ld&&pd&&(ld===pd||pd.indexOf(ld)>=0||ld.indexOf(pd)>=0))sc+=50;
+          }
+          var ln=(l.company||'').toLowerCase().split(' ')[0];
+          if(ln&&pname.indexOf(ln)>=0)sc+=20;
+        }
+        return {place:p,score:sc,addr:p.formattedAddress||''};
       });
-      if(!cityPart&&p.formattedAddress){
-        var pts=p.formattedAddress.split(',');
-        street=street||(pts[0]?pts[0].trim():'');
-        cityPart=pts[1]?pts[1].trim():'';
-        var szp=pts[2]?pts[2].trim():'';
-        if(!stateCode)stateCode=szp.split(' ')[0]||'';
-        if(!zipCode)zipCode=szp.split(' ')[1]||'';
+      scored.sort(function(a,b){return b.score-a.score;});
+
+      var best=scored[0],second=scored[1];
+      var confident=!second||(best.score-second.score)>=30||best.score>=70;
+
+      if(confident){
+        console.log('[Places] Auto-picked score='+best.score+':',best.addr);
+        callback(parsePlaceResult(best.place));
+      }else{
+        console.log('[Places] Ambiguous — showing picker');
+        showPlacesPicker(scored,callback);
       }
-
-      var placeId=p.id||'';
-      callback({
-        name:p.displayName&&p.displayName.text?p.displayName.text:'',
-        phone:p.nationalPhoneNumber||'',
-        website:p.websiteUri||'',
-        address:street.trim(),
-        city:cityPart,
-        state:stateCode,
-        zip:zipCode,
-        country:countryCode,
-        rating:p.rating||'',
-        reviewCount:p.userRatingCount||'',
-        reviewQuote:'',
-        evidenceLink:placeId?'https://www.google.com/maps/place/?q=place_id:'+placeId:''
-      });
     })
     .catch(function(err){
-      if(err&&err.message==='http error')return;
+      if(err&&err.message==='http')return;
       console.error('[Places] Error:',err);
       callback(null);
     });
   }
   doFetch(q,false);
+}
+
+function parsePlaceResult(p){
+  var street='',city='',state='',zip='',country='';
+  (p.addressComponents||[]).forEach(function(c){
+    var t=c.types||[];
+    if(t.indexOf('street_number')>=0)street=c.longText+' ';
+    if(t.indexOf('route')>=0)street+=c.longText;
+    if(t.indexOf('locality')>=0)city=c.longText;
+    if(t.indexOf('postal_town')>=0&&!city)city=c.longText;
+    if(t.indexOf('sublocality_level_1')>=0&&!city)city=c.longText;
+    if(t.indexOf('administrative_area_level_1')>=0)state=c.shortText;
+    if(t.indexOf('postal_code')>=0)zip=c.longText;
+    if(t.indexOf('country')>=0)country=c.shortText;
+  });
+  if(!city&&p.formattedAddress){
+    var pts=p.formattedAddress.split(',');
+    street=street||(pts[0]?pts[0].trim():'');
+    city=pts[1]?pts[1].trim():'';
+    var szp=pts[2]?pts[2].trim():'';
+    if(!state)state=szp.split(' ')[0]||'';
+    if(!zip)zip=szp.split(' ')[1]||'';
+  }
+  return {
+    name:p.displayName&&p.displayName.text?p.displayName.text:'',
+    phone:p.nationalPhoneNumber||'',website:p.websiteUri||'',
+    address:street.trim(),city:city,state:state,zip:zip,country:country,
+    rating:p.rating||'',reviewCount:p.userRatingCount||'',reviewQuote:'',
+    evidenceLink:p.id?'https://www.google.com/maps/place/?q=place_id:'+p.id:''
+  };
+}
+
+function showPlacesPicker(scored,callback){
+  var ex=document.getElementById('places-picker');if(ex)ex.remove();
+  window._ppResults=scored;
+  window._ppCb=callback;
+
+  var items=scored.slice(0,5).map(function(r,i){
+    var p=r.place;
+    var nm=p.displayName&&p.displayName.text?p.displayName.text:'Unknown';
+    var ph=p.nationalPhoneNumber||'No phone';
+    var web=p.websiteUri||'';
+    var conf=r.score>=70?'🟢 High match':r.score>=40?'🟡 Possible':'🔴 Low match';
+    return '<div data-pidx="'+i+'" onclick="pickPlace(this.dataset.pidx)" '+
+      'style="cursor:pointer;padding:12px 14px;border-bottom:1px solid #1e293b;transition:background .15s" '+
+      'onmouseenter="this.style.background=\'#0d1424\'" onmouseleave="this.style.background=\'\'">'+
+        '<div style="display:flex;justify-content:space-between;margin-bottom:3px">'+
+          '<span style="color:#e2e8f0;font-weight:700;font-size:13px">'+nm+'</span>'+
+          '<span style="font-size:10px">'+conf+'</span>'+
+        '</div>'+
+        '<div style="color:#64748b;font-size:11px">'+r.addr+'</div>'+
+        '<div style="color:#475569;font-size:10px;margin-top:2px">'+ph+(web?' &middot; '+web:'')+'</div>'+
+      '</div>';
+  }).join('');
+
+  var m=document.createElement('div');
+  m.id='places-picker';
+  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:310;display:flex;align-items:center;justify-content:center';
+  m.innerHTML='<div style="background:#0a0f1e;border:1px solid #1e293b;border-radius:12px;width:500px;max-width:95vw;max-height:80vh;display:flex;flex-direction:column;overflow:hidden">'+
+    '<div style="padding:14px 16px;border-bottom:1px solid #1e293b;display:flex;align-items:center;justify-content:space-between">'+
+      '<div>'+
+        '<h3 style="margin:0;font-size:13px;color:#e2e8f0">Multiple matches found</h3>'+
+        '<p style="margin:3px 0 0;font-size:11px;color:#64748b">Pick the correct business or skip</p>'+
+      '</div>'+
+      '<button onclick="document.getElementById(\'places-picker\').remove()" style="background:none;border:none;color:#64748b;font-size:20px;cursor:pointer;line-height:1">&times;</button>'+
+    '</div>'+
+    '<div style="overflow-y:auto;flex:1">'+items+'</div>'+
+    '<div style="padding:10px 14px;border-top:1px solid #1e293b">'+
+      '<button onclick="document.getElementById(\'places-picker\').remove()" '+
+        'style="background:rgba(100,116,139,.1);color:#94a3b8;border:1px solid #1e293b;border-radius:7px;padding:8px;font-size:12px;cursor:pointer;width:100%">'+
+        'None of these &mdash; skip'+
+      '</button>'+
+    '</div>'+
+  '</div>';
+  document.body.appendChild(m);
+}
+
+function pickPlace(idx){
+  var m=document.getElementById('places-picker');if(m)m.remove();
+  var r=window._ppResults&&window._ppResults[parseInt(idx)];
+  if(r&&window._ppCb)window._ppCb(parsePlaceResult(r.place));
 }
 
 function showAskMapsImport(){
@@ -3687,6 +4097,16 @@ function scoreLead(l){
   // Not overdue
   if(l.followUpDate&&l.followUpDate>=today())s+=5;
   return Math.min(100,Math.max(0,s));
+}
+
+function leakageScoreBadge(l){
+  var s=calcRevLeakageScore(l);
+  if(s===0)return '';
+  var color=s>=70?'#ef4444':s>=40?'#f97316':'#eab308';
+  var label=s>=70?'🔴':s>=40?'🟠':'🟡';
+  return '<span title="Revenue Leakage Score: '+s+'/100" style="background:'+color+'22;color:'+color+
+    ';border:1px solid '+color+'44;border-radius:4px;font-size:10px;font-weight:700;padding:2px 5px;cursor:help">'+
+    label+' '+s+'</span>';
 }
 
 function getScoreColor(score){
@@ -4204,6 +4624,31 @@ function checkReminders(){
 
 // ── DASHBOARD ────────────────────────────────────────
 function renderDash(){
+  // ── Intelligence KPIs ─────────────────────────────────────────────────
+  var kpiEl=document.getElementById('intel-kpis');
+  if(kpiEl){
+    var activeLeads=leads.filter(function(l){return l.status!=='Closed'&&l.status!=='Lost'&&l.status!=='Deleted';});
+    var warmLeads=leads.filter(function(l){return l.status==='Warm Lead'||l.status==='Replied';});
+    var totalValue=leads.reduce(function(s,l){return s+(parseFloat(l.dealValue)||0);},0);
+    var t=today();
+    var dueToday=leads.filter(function(l){return l.followUpDate===t&&l.status!=='Closed';}).length;
+    var researched=leads.filter(function(l){return l.mobileScore||l.recentComplaintQuote;}).length;
+    var avgLeakage=activeLeads.length?Math.round(activeLeads.reduce(function(s,l){return s+calcRevLeakageScore(l);},0)/activeLeads.length):0;
+    kpiEl.innerHTML=[
+      {val:activeLeads.length,lbl:'Active Leads',color:'#60a5fa'},
+      {val:warmLeads.length,lbl:'Warm / Replied',color:'#f97316'},
+      {val:dueToday,lbl:'Due Today',color:'#ef4444'},
+      {val:'$'+totalValue.toLocaleString(),lbl:'Pipeline Value',color:'#34d399'},
+      {val:researched+'/'+leads.length,lbl:'Researched',color:'#a78bfa'},
+      {val:avgLeakage+'%',lbl:'Avg Leakage Score',color:'#fbbf24'},
+    ].map(function(k){
+      return '<div class="intel-kpi" style="border-color:'+k.color+'22">'+
+        '<div class="val" style="color:'+k.color+'">'+k.val+'</div>'+
+        '<div class="lbl">'+k.lbl+'</div>'+
+      '</div>';
+    }).join('');
+  }
+
   var da=ge('darea');if(!da)return;
   var t=today();
   var total=leads.length;
