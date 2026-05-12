@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -682,8 +683,8 @@ tr:hover td{background:var(--bg3)}
   #lftr{font-size:10px;padding:3px 10px}
 }
 </style>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="https://apis.google.com/js/api.js" async defer></script>
+
+
 </head>
 <body>
 
@@ -1606,10 +1607,14 @@ function showPage(name,btn){
   var pgbtn=btn||document.getElementById('pgbtn-'+name);
   if(pgbtn)pgbtn.classList.add('active');
   currentPage=name;
-  if(name==='pipeline')rl();
-  if(name==='research')updateResearchQueue();
+  if(name==='pipeline'){rl();}
+  if(name==='research'){updateResearchQueue();}
   if(name==='intelligence'){renderDash();}
   if(name==='settings'){rs();ra();}
+  if(name==='outreach'){
+    setTimeout(function(){if(typeof renderTemplates==='function')renderTemplates();},50);
+    setTimeout(function(){if(typeof renderGmailTab==='function')renderGmailTab();},100);
+  }
 }
 function toggleAdvFilters(){
   var d=document.getElementById('adv-filter-drawer');
@@ -1635,6 +1640,11 @@ function initLeadCardEvents(){
     if(t2.classList.contains('lead-cb'))toggleBulkSelect(lid);
   });
 }
+// Global delegated handler for modal close buttons
+document.addEventListener('click',function(e){
+  var btn=e.target.closest('[data-close-modal]');
+  if(btn){var el2=document.getElementById(btn.dataset.closeModal);if(el2)el2.remove();}
+});
 function initMobileGestures(){
   // Swipe right to close lead panel on mobile
   var lp=document.getElementById('lp');
@@ -1667,6 +1677,12 @@ function initMobileGestures(){
 function initPageMode(){
   var app=document.getElementById('app');
   if(app)app.classList.add('page-mode');
+  // Activate pipeline page by default
+  var pg=document.getElementById('page-pipeline');
+  if(pg)pg.classList.add('active');
+  var btn=document.getElementById('pgbtn-pipeline');
+  if(btn)btn.classList.add('active');
+  currentPage='pipeline';
   updatePipelineBadge();
   updateResearchQueue();
 }
@@ -2199,26 +2215,8 @@ function drawLeakageBoard(){
 }
 
 // Wrap renderDash to also draw charts
-var _rdOrig=typeof renderDash==='function'?renderDash:null;
-function renderDash(){
-  if(_rdOrig)_rdOrig();
-  setTimeout(function(){
-    drawRevenueChart();drawFunnel();drawSenderPerf();drawLeakageBoard();
-  },60);
-}
 
-// Wrap showPage to trigger chart draws and template render
-var _spOrig=typeof showPage==='function'?showPage:null;
-function showPage(name,btn){
-  if(_spOrig)_spOrig(name,btn);
-  if(name==='intelligence'){setTimeout(function(){drawRevenueChart();drawFunnel();drawSenderPerf();drawLeakageBoard();},80);}
-  if(name==='outreach'){
-    setTimeout(renderTemplates,50);
-    setTimeout(function(){
-      if(typeof renderGmailTab==='function')renderGmailTab();
-    },100);
-  }
-}
+
 
 
 
@@ -2646,6 +2644,336 @@ var _origBulkGemini=window.runBulkGeminiResearch;
 window.runBulkGeminiResearch=runBatchGeminiResearch5;
 
 
+
+// ══════════════════════════════════════════════════════════════════
+// AUTO-RESEARCH PIPELINE
+// Runs automatically after any lead is added/imported
+// Chain: Places → PageSpeed → Gemini (respects rate limits)
+// ══════════════════════════════════════════════════════════════════
+
+var _autoResearchQueue = [];   // leads waiting for research
+var _autoResearchRunning = false;
+
+function queueAutoResearch(leadId){
+  if(!leadId) return;
+  if(_autoResearchQueue.indexOf(String(leadId)) < 0){
+    _autoResearchQueue.push(String(leadId));
+  }
+  if(!_autoResearchRunning) runAutoResearchQueue();
+}
+
+function runAutoResearchQueue(){
+  if(!_autoResearchQueue.length){ _autoResearchRunning=false; return; }
+  _autoResearchRunning = true;
+  var lid = _autoResearchQueue.shift();
+  var l = leads.find(function(x){ return String(x.id)===lid; });
+  if(!l){ runAutoResearchQueue(); return; }
+
+  // Show inline spinner on lead card
+  var card = document.getElementById('lcard-'+lid);
+  if(card){
+    var ico = card.querySelector('.lead-card-icon');
+    if(ico) ico.setAttribute('data-orig', ico.textContent);
+    if(ico) ico.innerHTML = '<span style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,106,0,.3);border-top-color:var(--orange);border-radius:50%;animation:spin .6s linear infinite"></span>';
+  }
+
+  // Step 1 — Places (if missing phone or address)
+  function step1(){
+    if(l.phone && l.address){ step2(); return; }
+    var q = l.company+(l.city?' '+l.city:'')+(l.state?' '+l.state:'');
+    doPlacesLookup(q, function(r){
+      if(r) applyPlacesResult(lid, r);
+      // Refresh local lead ref after update
+      l = leads.find(function(x){ return String(x.id)===lid; }) || l;
+      setTimeout(step2, 500);
+    });
+  }
+
+  // Step 2 — PageSpeed (if website exists and no mobileScore)
+  function step2(){
+    var w = l.website || (leads.find(function(x){return String(x.id)===lid;})||{}).website;
+    if(!w || l.mobileScore){ step3(); return; }
+    getPageSpeed(w, function(result){
+      if(result){
+        leads = leads.map(function(x){
+          if(String(x.id)!==lid) return x;
+          var u = Object.assign({},x);
+          u.mobileScore = result.score;
+          var fr=[];
+          if(result.score<50) fr.push('Poor mobile ('+result.score+'/100)');
+          if(result.lcp) fr.push('LCP: '+result.lcp);
+          if(fr.length && !x.techFriction) u.techFriction = fr.join(', ');
+          if(result.proofUrl && !x.evidenceLink) u.evidenceLink = result.proofUrl;
+          u.lastScanDate = today();
+          u.lastSender = x.lastSender;
+          u.outreachLog = (u.outreachLog||[]).concat([{date:today(),note:'Auto PageSpeed: '+result.score+'/100',sender:'[Auto]'}]);
+          return u;
+        });
+        var upd=leads.find(function(x){return String(x.id)===lid;});
+        if(upd) syncLead(upd);
+        saveLoc();
+      }
+      l = leads.find(function(x){return String(x.id)===lid;}) || l;
+      setTimeout(step3, 2500); // PageSpeed rate limit
+    });
+  }
+
+  // Step 3 — Gemini research (if missing complaint or strategicPlay)
+  function step3(){
+    var current = leads.find(function(x){return String(x.id)===lid;}) || l;
+    var key = localStorage.getItem('bdl-gemini-key');
+    if(!key || (current.recentComplaintQuote && current.strategicPlay)){
+      finishResearch(); return;
+    }
+    runGeminiResearch(current, function(result, err){
+      if(result && !err){
+        leads = leads.map(function(x){
+          if(String(x.id)!==lid) return x;
+          var u = Object.assign({},x);
+          if(result.recentComplaintQuote) u.recentComplaintQuote = result.recentComplaintQuote;
+          if(result.evidenceLink && !x.evidenceLink) u.evidenceLink = result.evidenceLink;
+          if(result.reviewDecay) u.reviewDecay = result.reviewDecay;
+          if(result.strategicPlay) u.strategicPlay = result.strategicPlay;
+          if(result.painPoints && !x.painPoints) u.painPoints = result.painPoints;
+          u.lastScanDate = today();
+          u.lastSender = x.lastSender;
+          u.outreachLog = (u.outreachLog||[]).concat([{date:today(),note:'Auto research: '+(result.recentComplaintQuote?'found complaint':'no complaint'),sender:'[Auto]'}]);
+          return u;
+        });
+        var upd=leads.find(function(x){return String(x.id)===lid;});
+        if(upd) syncLead(upd);
+        saveLoc();
+      }
+      finishResearch();
+    });
+  }
+
+  function finishResearch(){
+    // Remove spinner, restore icon
+    var card2 = document.getElementById('lcard-'+lid);
+    if(card2){
+      var ico = card2.querySelector('.lead-card-icon');
+      if(ico && ico.getAttribute('data-orig')){
+        ico.textContent = ico.getAttribute('data-orig');
+        ico.removeAttribute('data-orig');
+      }
+    }
+    rl(); // Re-render card with new data
+    // Process next in queue after delay
+    setTimeout(runAutoResearchQueue, 1000);
+  }
+
+  step1();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// IDLE BACKGROUND RESEARCH
+// When app is idle 90s, auto-research top 5 unresearched leads
+// ══════════════════════════════════════════════════════════════════
+
+var _idleTimer = null;
+var _idleResearchDone = false;
+
+function resetIdleTimer(){
+  clearTimeout(_idleTimer);
+  _idleTimer = setTimeout(runIdleResearch, 90000); // 90 seconds
+}
+
+function runIdleResearch(){
+  if(_autoResearchRunning) return; // don't interfere with manual queue
+  var key = localStorage.getItem('bdl-gemini-key');
+  if(!key) return;
+
+  var targets = leads
+    .filter(function(l){
+      return l.status !== 'Closed' && l.status !== 'Lost' &&
+             (!l.mobileScore || !l.recentComplaintQuote || !l.evidenceLink);
+    })
+    .sort(function(a,b){ return (parseInt(b.priority)||5)-(parseInt(a.priority)||5); })
+    .slice(0,5);
+
+  if(!targets.length) return;
+
+  setSyn('syn','Background research...');
+  targets.forEach(function(l, i){
+    setTimeout(function(){
+      queueAutoResearch(l.id);
+    }, i * 500);
+  });
+
+  // Reset idle timer for next cycle (5 min)
+  _idleTimer = setTimeout(runIdleResearch, 300000);
+}
+
+function initIdleDetection(){
+  ['click','keydown','scroll','touchstart'].forEach(function(ev){
+    document.addEventListener(ev, resetIdleTimer, {passive:true});
+  });
+  resetIdleTimer();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// REAL-TIME GMAIL REPLY DETECTION
+// Polls connected inboxes every 90s when Outreach page is open
+// Much faster than 5-min Apps Script trigger
+// ══════════════════════════════════════════════════════════════════
+
+var _gmailPollInterval = null;
+var _lastGmailPoll = 0;
+
+function startGmailPolling(){
+  if(_gmailPollInterval) return; // already running
+  console.log('[Gmail] Starting 90s polling');
+  _gmailPollInterval = setInterval(pollGmailForReplies, 90000);
+  // Run immediately on start
+  pollGmailForReplies();
+}
+
+function stopGmailPolling(){
+  if(_gmailPollInterval){
+    clearInterval(_gmailPollInterval);
+    _gmailPollInterval = null;
+    console.log('[Gmail] Polling stopped');
+  }
+}
+
+function pollGmailForReplies(){
+  var connected = Object.keys(gmailAccounts||{}).filter(function(e){
+    return gmailAccounts[e] && gmailAccounts[e].connected && !isTokenExpired(gmailAccounts[e]);
+  });
+  if(!connected.length) return;
+
+  var now = Date.now();
+  if(now - _lastGmailPoll < 60000) return; // min 60s between polls
+  _lastGmailPoll = now;
+
+  console.log('[Gmail] Polling '+connected.length+' accounts...');
+  var badge = document.getElementById('gmail-badge');
+  if(badge) badge.textContent = 'Scanning...';
+
+  var repliesFound = 0;
+  var done = 0;
+
+  connected.forEach(function(email){
+    scanGmailAccount(email)
+      .then(function(results){
+        (results||[]).forEach(function(r){
+          if(r && r.updated) repliesFound++;
+        });
+        done++;
+        if(done === connected.length){
+          if(badge) badge.textContent = connected.length+' Connected';
+          if(repliesFound > 0){
+            flash('\uD83D\uDCEC '+repliesFound+' new repl'+(repliesFound>1?'ies':'y')+' detected — leads updated');
+            rl();
+            updatePipelineBadge();
+            if(document.getElementById('gmail-scan-results')){
+              renderGmailTab();
+            }
+          }
+        }
+      })
+      .catch(function(err){
+        done++;
+        console.warn('[Gmail] Poll error for '+email+':', err);
+      });
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// JOB QUEUE — Rate-limit coordinator for all API calls
+// Prevents simultaneous Places + PageSpeed + Gemini calls
+// ══════════════════════════════════════════════════════════════════
+
+var _jobQueue = [];
+var _jobRunning = false;
+
+var JOB_DELAYS = {
+  'places': 200,      // Places: 5 concurrent OK, 200ms gap
+  'pagespeed': 2500,  // PageSpeed: 400req/100s = 2.5s gap
+  'gemini': 3000,     // Gemini: ~20 RPM = 3s gap
+  'gmail': 500        // Gmail: generous rate limit
+};
+
+function enqueueJob(type, fn, onDone){
+  _jobQueue.push({type:type, fn:fn, onDone:onDone||function(){}});
+  if(!_jobRunning) drainJobQueue();
+}
+
+function drainJobQueue(){
+  if(!_jobQueue.length){ _jobRunning=false; return; }
+  _jobRunning = true;
+  var job = _jobQueue.shift();
+  try{
+    job.fn(function(result){
+      job.onDone(result);
+      setTimeout(drainJobQueue, JOB_DELAYS[job.type]||500);
+    });
+  } catch(e){
+    console.error('[JobQueue] Error in '+job.type+':', e);
+    job.onDone(null);
+    setTimeout(drainJobQueue, JOB_DELAYS[job.type]||500);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// AUTO-RESEARCH ON NEW LEAD ADDED (hook into addLead/saveAILead)
+// ══════════════════════════════════════════════════════════════════
+
+function onLeadAdded(leadId){
+  if(!leadId) return;
+  var l = leads.find(function(x){ return String(x.id)===String(leadId); });
+  if(!l) return;
+
+  // Auto-fill deal value if missing
+  if(!l.dealValue){
+    leads = leads.map(function(x){
+      if(String(x.id)!==String(leadId)) return x;
+      return Object.assign({},x,{dealValue:String(calcDealValue(x))});
+    });
+    saveLoc();
+  }
+
+  // Auto-schedule follow-up if missing
+  if(!l.followUpDate){
+    leads = leads.map(function(x){
+      if(String(x.id)!==String(leadId)) return x;
+      return Object.assign({},x,{followUpDate:autoScheduleFollowUp(x)});
+    });
+    saveLoc();
+  }
+
+  // Queue research only if we have at least a company name
+  if(l.company){
+    setTimeout(function(){
+      queueAutoResearch(leadId);
+    }, 1500); // Short delay so UI settles first
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// STARTUP — wire idle detection + Gmail polling into page init
+// ══════════════════════════════════════════════════════════════════
+
+function initAutoSystems(){
+  // Start idle detection for background research
+  initIdleDetection();
+
+  // Start Gmail polling if any accounts connected
+  var connected = Object.keys(gmailAccounts||{}).filter(function(e){
+    return gmailAccounts[e]&&gmailAccounts[e].connected;
+  });
+  if(connected.length > 0){
+    startGmailPolling();
+  }
+
+  // Show research queue count
+  updateResearchQueue();
+
+  console.log('[AutoSystems] Idle research + Gmail polling initialized');
+}
+
+
 // SHEETS
 function sheetRead(){return fetch(SHEET_URL+'?_='+Date.now()).then(function(r){return r.json();}).catch(function(){return null;});}
 function sheetWrite(p,retry){
@@ -2766,7 +3094,19 @@ function login(){
       if(ll.lastContacted!==sl.lastContacted)return true;
       return false;
     });
-    loadSenders(data.senders||[]);setTimeout(function(){ge('load').classList.add('h');ge('app').classList.remove('h');setTimeout(initPageMode,50);setTimeout(initMobileGestures,100);ge('ulbl').textContent='👤 '+who;initNF();renderAll();startClock();setTimeout(checkReminders,2000);setTimeout(runAutoArchive,3000);setTimeout(checkReEngagement,4000);initSwipe();initGmail();
+    loadSenders(data.senders||[]);setTimeout(function(){ge('load').classList.add('h');ge('app').classList.remove('h');
+        initPageMode();
+        ge('ulbl').textContent='👤 '+who;
+        initNF();
+        renderAll();
+        startClock();
+        setTimeout(initMobileGestures,50);
+        setTimeout(initLeadCardEvents,100);
+        setTimeout(checkReminders,2000);
+        setTimeout(runAutoArchive,3000);
+        setTimeout(checkReEngagement,4000);
+        setTimeout(function(){if(typeof renderGmailTab==='function')renderGmailTab();},600);
+        initSwipe();initGmail();
       // Background sync AFTER UI loads
       if(toSync.length){ge('sdot').style.background='#f59e0b';ge('stxt').textContent='Syncing '+toSync.length+'…';var si=0;(function doSync(){if(si>=toSync.length){ge('sdot').style.background='#22c55e';ge('stxt').textContent='Ready';return;}syncLead(toSync[si]);si++;setTimeout(doSync,150);})();}
     },200);
@@ -2780,7 +3120,19 @@ function login(){
       who=u;
     } else {who=u;}
     leads=loc.leads||[];clients=loc.clients||[];deletedLeads=loc.deletedLeads||[];archivedLeads=loc.archivedLeads||[];loadSenders();
-    setTimeout(function(){ge('load').classList.add('h');ge('app').classList.remove('h');setTimeout(initPageMode,50);setTimeout(initMobileGestures,100);ge('ulbl').textContent='👤 '+who;initNF();renderAll();startClock();setTimeout(checkReminders,2000);setTimeout(runAutoArchive,3000);setTimeout(checkReEngagement,4000);initSwipe();initGmail();},200);
+    setTimeout(function(){ge('load').classList.add('h');ge('app').classList.remove('h');
+        initPageMode();
+        ge('ulbl').textContent='👤 '+who;
+        initNF();
+        renderAll();
+        startClock();
+        setTimeout(initMobileGestures,50);
+        setTimeout(initLeadCardEvents,100);
+        setTimeout(checkReminders,2000);
+        setTimeout(runAutoArchive,3000);
+        setTimeout(checkReEngagement,4000);
+        setTimeout(function(){if(typeof renderGmailTab==='function')renderGmailTab();},600);
+        initSwipe();initGmail();},200);
   });
 }
 function logout(){ge('app').classList.add('h');ge('login').classList.remove('h');ge('lu').value='';ge('lpw').value='';leads=[];clients=[];who='';closeLp();stopClock();}
@@ -5597,6 +5949,7 @@ function runAskMapsImport(){
   }).catch(function(err){
     if(statusEl)statusEl.innerHTML='<span style="color:#ef4444">Error: '+err.message+'</span>';
     flash('API error: '+err.message,'bad');
+      newLeads.forEach(function(nl,i){setTimeout(function(){queueAutoResearch(nl.id);},1000+i*800);});
   });
 }
 
@@ -6167,6 +6520,13 @@ function checkReminders(){
 
 // ── DASHBOARD ────────────────────────────────────────
 function renderDash(){
+  // Draw all intelligence charts
+  setTimeout(function(){
+    if(typeof drawRevenueChart==='function')drawRevenueChart();
+    if(typeof drawFunnel==='function')drawFunnel();
+    if(typeof drawSenderPerf==='function')drawSenderPerf();
+    if(typeof drawLeakageBoard==='function')drawLeakageBoard();
+  },80);
   // ── Intelligence KPIs ─────────────────────────────────────────────────
   var kpiEl=document.getElementById('intel-kpis');
   if(kpiEl){
@@ -7451,5 +7811,8 @@ Examples:
   });
 </script>
 
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://apis.google.com/js/api.js" async defer></script>
 </body>
 </html>
