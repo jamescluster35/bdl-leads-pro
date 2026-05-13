@@ -3107,6 +3107,7 @@ function login(){
         setTimeout(checkReEngagement,4000);
         setTimeout(function(){if(typeof renderGmailTab==='function')renderGmailTab();},600);
         initSwipe();initGmail();
+        setTimeout(initAutoSystems,1200);
       // Background sync AFTER UI loads
       if(toSync.length){ge('sdot').style.background='#f59e0b';ge('stxt').textContent='Syncing '+toSync.length+'…';var si=0;(function doSync(){if(si>=toSync.length){ge('sdot').style.background='#22c55e';ge('stxt').textContent='Ready';return;}syncLead(toSync[si]);si++;setTimeout(doSync,150);})();}
     },200);
@@ -3392,6 +3393,7 @@ var nl={
     return;
   }
   saveLoc();showAF=false;ge('afarea').innerHTML='';renderAll();flash('✓ Lead added!');syncLead(nl);
+  onLeadAdded(nl&&nl.id);
 }
 
 var _srchTimer=null;
@@ -7559,6 +7561,120 @@ function initGmail() {
   // setTimeout(scanAllGmailAccounts, 3000);
 }
 
+
+// ── CSV Import ───────────────────────────────────────────────────────────
+function showCSVImport(){
+  var ex=document.getElementById('csv-modal');if(ex)ex.remove();
+  var m=document.createElement('div');
+  m.id='csv-modal';
+  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:320;display:flex;align-items:center;justify-content:center;padding:16px';
+  m.innerHTML='<div style="background:var(--bg2);border:1px solid var(--border2);border-radius:12px;width:560px;max-width:95vw;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:var(--shadow)">'
+    +'<div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">'
+      +'<div><h3 style="font-size:13px;font-weight:700;color:var(--text);margin:0">Import from CSV</h3>'
+        +'<p style="font-size:11px;color:var(--text3);margin:3px 0 0">Upload file or paste CSV. Must have a company column.</p></div>'
+      +'<button data-close-modal="csv-modal" style="background:none;border:none;color:var(--text3);font-size:22px;cursor:pointer">&times;</button>'
+    +'</div>'
+    +'<div style="padding:14px 16px;flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px">'
+      +'<input type="file" accept=".csv,.txt" onchange="handleCSVFile(event)" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:7px 10px;color:var(--text);font-size:12px">'
+      +'<div style="text-align:center;color:var(--text4);font-size:11px">or paste below</div>'
+      +'<textarea id="csv-text" rows="8" placeholder="company,email,phone,city,state,niche" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:8px 10px;color:var(--text);font-size:11px;outline:none;resize:vertical;font-family:monospace"></textarea>'
+      +'<div id="csv-prev" style="font-size:11px;color:var(--text3)"></div>'
+    +'</div>'
+    +'<div style="padding:10px 14px;border-top:1px solid var(--border);display:flex;gap:7px">'
+      +'<button onclick="executeCSVImport()" class="lp-save-btn" style="flex:1">Import Leads</button>'
+      +'<button data-close-modal="csv-modal" style="flex:0 0 80px;padding:9px;border-radius:7px;font-size:12px;cursor:pointer;border:1px solid var(--border2);background:transparent;color:var(--text2)">Cancel</button>'
+    +'</div>'
+    +'</div>';
+  document.body.appendChild(m);
+  m.addEventListener('click',function(e){if(e.target===m)m.remove();});
+}
+function handleCSVFile(e){
+  var file=e.target.files[0];if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    var ta=document.getElementById('csv-text');
+    if(ta){
+      ta.value=ev.target.result;
+      var nl2=ev.target.result.trim().split('\n');
+      var pv=document.getElementById('csv-prev');
+      if(pv)pv.textContent=nl2.length+' rows. Sample: '+(nl2[1]||'').substring(0,60);
+    }
+  };
+  reader.readAsText(file);
+}
+function executeCSVImport(){
+  var text=(document.getElementById('csv-text')&&document.getElementById('csv-text').value)||'';
+  if(!text.trim()){flash('Paste CSV data first','bad');return;}
+  var lines=text.trim().split('\n').filter(function(l){return l.trim();});
+  if(lines.length<2){flash('Need at least 1 data row','bad');return;}
+  var hdrs=lines[0].split(',').map(function(h){return h.trim().toLowerCase().replace(/["']/g,'');});
+  var cm={};
+  var al={
+    company:['company','business','name','company name'],
+    email:['email','e-mail','email address'],
+    phone:['phone','telephone','mobile','cell'],
+    city:['city','location','town'],
+    state:['state','province','region'],
+    zip:['zip','postal','postcode'],
+    website:['website','url','web','site'],
+    niche:['niche','industry','category','type'],
+    contactName:['contact','contact name','person','owner'],
+    contactTitle:['title','position','role'],
+    notes:['notes','note','comments']
+  };
+  Object.keys(al).forEach(function(f){
+    al[f].forEach(function(a){var ci=hdrs.indexOf(a);if(ci>=0&&cm[f]===undefined)cm[f]=ci;});
+  });
+  if(cm.company===undefined){flash('No company column found','bad');return;}
+  var maxId=leads.length?Math.max.apply(null,leads.map(function(l){return parseInt((l.id||'0').replace('bdl_',''))||0;})):0;
+  var maxNum=leads.length?Math.max.apply(null,leads.map(function(l){return parseInt(l.num||0)||0;})):0;
+  var t=today(),added=0,skipped=0,newLeads=[];
+  lines.slice(1).forEach(function(line){
+    if(!line.trim())return;
+    var cells=[],inQ=false,cur='';
+    for(var ci=0;ci<line.length;ci++){
+      var c=line[ci];
+      if(c==='"'){inQ=!inQ;}
+      else if(c===','&&!inQ){cells.push(cur.trim());cur='';}
+      else cur+=c;
+    }
+    cells.push(cur.trim());
+    var co=cm.company!==undefined?(cells[cm.company]||'').replace(/["']/g,'').trim():'';
+    if(!co){skipped++;return;}
+    var em=cm.email!==undefined?(cells[cm.email]||'').trim():'';
+    var dups=checkDuplicateOnAdd(co,em,'');
+    if(dups.length&&dups[0].score>=100){skipped++;return;}
+    maxId++;maxNum++;
+    var nl={
+      id:'bdl_'+maxId,num:maxNum,company:co,email:em,
+      phone:cm.phone!==undefined?(cells[cm.phone]||'').trim():'',
+      city:cm.city!==undefined?(cells[cm.city]||'').trim():'',
+      state:cm.state!==undefined?(cells[cm.state]||'').trim():'',
+      zip:cm.zip!==undefined?(cells[cm.zip]||'').trim():'',
+      website:cm.website!==undefined?(cells[cm.website]||'').trim():'',
+      niche:cm.niche!==undefined?(cells[cm.niche]||'').trim():'',
+      contactName:cm.contactName!==undefined?(cells[cm.contactName]||'').trim():'',
+      contactTitle:cm.contactTitle!==undefined?(cells[cm.contactTitle]||'').trim():'',
+      notes:cm.notes!==undefined?(cells[cm.notes]||'').trim():'',
+      status:'Pending',priority:5,followUpDate:nbiz(t,4),lastContacted:t,
+      lastSender:(SENDERS&&SENDERS[0])||'',followUpCount:0,
+      dealValue:'',timezone:'',yearEst:'',address:'',mobileScore:'',serviceFormat:'',
+      profileStatus:'',leadDestination:'',markupLoss:'',frictionFees:'',reviewDecay:'',
+      recentComplaintQuote:'',techFriction:'',priceRange:'',reviewCount:'',
+      strategicPlay:'',evidenceLink:'',lastScanDate:'',
+      outreachLog:[{date:t,note:'Imported from CSV',sender:'[Import]'}],contacts:[]
+    };
+    var tz=lookupTimezone(nl);if(tz)nl.timezone=tz;
+    nl.dealValue=String(calcDealValue(nl));
+    leads.push(nl);newLeads.push(nl);added++;
+  });
+  if(!added){flash('No new leads (all duplicates or blank)','bad');return;}
+  saveLoc();rl();
+  var ex=document.getElementById('csv-modal');if(ex)ex.remove();
+  flash('Imported '+added+' lead'+(added>1?'s':'')+(skipped?' ('+skipped+' skipped)':''));
+  newLeads.forEach(function(nl){syncLead(nl);});
+  newLeads.forEach(function(nl,i){setTimeout(function(){queueAutoResearch(nl.id);},1200+i*900);});
+}
 </script>
 
 <div id="qi-panel" class="h" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.92);z-index:250;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px)">
