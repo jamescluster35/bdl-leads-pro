@@ -682,6 +682,252 @@ tr:hover td{background:var(--bg3)}
   #load{gap:10px}
   #lftr{font-size:10px;padding:3px 10px}
 }
+
+/* ════════════════════════════════════════════════════════════
+   OVERLAP & LAYOUT FIXES
+   ════════════════════════════════════════════════════════════ */
+
+/* ── Lead panel — push content, don't overlap ───────────────── */
+#app.page-mode #lp{
+  top:48px;          /* below topbar */
+  height:calc(100vh - 48px);
+}
+
+/* When LP is open on desktop, shrink page-content */
+@media(min-width:769px){
+  #app.page-mode.lp-open #page-content{
+    margin-right:440px;
+    transition:margin-right .22s cubic-bezier(.16,1,.3,1);
+  }
+  #app.page-mode #page-content{
+    margin-right:0;
+    transition:margin-right .22s cubic-bezier(.16,1,.3,1);
+  }
+}
+
+/* ── AI panel — sits left of LP when both open ──────────────── */
+.ai-panel{
+  top:48px!important;
+  height:calc(100vh - 48px)!important;
+  z-index:145!important;  /* below LP (150) */
+}
+@media(min-width:769px){
+  #app.page-mode.lp-open .ai-panel.open{
+    right:440px;
+    transition:right .22s cubic-bezier(.16,1,.3,1);
+  }
+}
+
+/* ── Lead list proper scrolling ─────────────────────────────── */
+#lare{
+  flex:1;
+  overflow-y:auto;
+}
+#pipeline-list{
+  flex:1;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+
+/* ── Bulk bar — no z-index conflict ─────────────────────────── */
+#bulk-bar{
+  position:sticky;
+  bottom:0;
+  z-index:10;
+  background:var(--bg2);
+  border-top:1px solid var(--border2);
+  flex-shrink:0;
+}
+
+/* ── Filter drawer fix — only display:none when closed ──────── */
+#adv-filter-drawer{
+  display:none;    /* overridden to flex when open via JS */
+}
+#adv-filter-drawer.open{
+  display:flex!important;
+}
+
+/* ── Page views — prevent content overflow ──────────────────── */
+.page-view{
+  max-height:calc(100vh - 48px);
+  overflow:hidden;
+}
+.page-view.active{
+  display:flex;
+  flex-direction:column;
+}
+.page-body{
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
+#page-pipeline .page-body{
+  overflow:hidden;   /* children scroll instead */
+}
+
+/* ── lftr count bar ─────────────────────────────────────────── */
+#lftr{
+  flex-shrink:0;
+  font-size:10px;
+  color:var(--text4);
+  padding:3px 12px;
+  border-bottom:1px solid var(--border);
+  background:var(--bg2);
+}
+
+/* ── Small desktop (1024-1280px): narrower LP ───────────────── */
+@media(min-width:769px) and (max-width:1280px){
+  #lp{width:380px}
+  #app.page-mode.lp-open #page-content{margin-right:380px}
+  #app.page-mode.lp-open .ai-panel.open{right:380px}
+}
+
+/* ── Mobile — ensure nothing overlaps ───────────────────────── */
+@media(max-width:768px){
+  #app.page-mode.lp-open #page-content{
+    margin-right:0!important;  /* LP is full screen on mobile */
+  }
+  .ai-panel{
+    width:100%!important;
+    right:0!important;
+  }
+  #bulk-bar{
+    position:sticky;
+    bottom:0;
+  }
+  .page-view{
+    max-height:calc(100vh - 48px - 56px); /* topbar + bottom nav */
+  }
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   LEAD PANEL — Complete CSS Fix
+   lp-scroll must scroll, lp-foot must stick to bottom
+   ════════════════════════════════════════════════════════════ */
+
+/* LP is a fixed slide-over, flex column */
+#lp{
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+/* Header — fixed height, never scrolls */
+.lp-hdr{
+  flex-shrink:0;
+  padding:12px 14px;
+  border-bottom:1px solid var(--border);
+  background:var(--bg2);
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+}
+.lp-hdr-l{flex:1;min-width:0}
+.lp-name{font-size:14px;font-weight:800;letter-spacing:-.3px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lp-sub{font-size:9px;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:2px}
+.lp-close{background:transparent;border:none;color:var(--text3);font-size:20px;cursor:pointer;padding:4px 6px;border-radius:5px;transition:color .15s;flex-shrink:0}
+.lp-close:hover{color:var(--text)}
+
+/* Scroll area — takes all remaining space, scrolls independently */
+.lp-scroll, #lp-scroll{
+  flex:1;
+  overflow-y:auto;
+  overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  min-height:0;   /* CRITICAL: without this flex children don't scroll */
+}
+
+/* Footer — fixed at bottom, never scrolls */
+.lp-foot{
+  flex-shrink:0;
+  display:flex;
+  gap:6px;
+  padding:9px 12px;
+  border-top:1px solid var(--border);
+  background:var(--bg2);
+  align-items:center;
+}
+.lp-save{
+  flex:1;padding:8px 10px;border-radius:7px;font-size:12px;font-weight:700;
+  cursor:pointer;border:none;
+  background:linear-gradient(135deg,var(--orange),var(--orange2));
+  color:#fff;transition:opacity .15s;
+}
+.lp-save:hover{opacity:.88}
+.lp-fu-btn{
+  padding:7px 10px;border-radius:6px;font-size:11px;font-weight:600;
+  cursor:pointer;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);
+  white-space:nowrap;transition:all .15s;flex-shrink:0;
+}
+.lp-fu-btn:hover{background:var(--bg4);color:var(--text)}
+.lp-del{
+  padding:7px 9px;border-radius:6px;font-size:14px;cursor:pointer;
+  border:1px solid rgba(239,68,68,.2);background:rgba(239,68,68,.06);
+  transition:all .15s;flex-shrink:0;
+}
+.lp-del:hover{background:rgba(239,68,68,.15)}
+
+/* Section structure inside scroll area */
+.lp-sec{border-bottom:1px solid var(--border)}
+.lp-sec-hdr{
+  padding:9px 14px;cursor:pointer;
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--bg2);user-select:none;transition:background .15s;min-height:38px;
+}
+.lp-sec-hdr:hover{background:var(--bg3)}
+.lp-sec-hdr h3{font-size:11px;font-weight:700;color:var(--text);margin:0}
+.lp-sec-body{padding:10px 14px;background:var(--bg)}
+.lp-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.lp-full{grid-column:1/-1}
+.lp-f label{
+  font-size:9px;color:var(--text3);font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;
+  display:block;margin-bottom:3px;
+}
+.lp-f input,.lp-f select,.lp-f textarea{
+  width:100%;background:var(--bg3);border:1px solid var(--border2);
+  border-radius:6px;padding:6px 9px;color:var(--text);
+  font-size:12px;outline:none;transition:border-color .15s;
+}
+.lp-f input:focus,.lp-f select:focus,.lp-f textarea:focus{
+  border-color:rgba(255,106,0,.4);
+  box-shadow:0 0 0 2px rgba(255,106,0,.07);
+}
+
+/* Outreach log inside LP */
+.lp-log{max-height:180px;overflow-y:auto;font-size:11px}
+.lp-log-entry{padding:6px 0;border-bottom:1px solid var(--border);line-height:1.4}
+.lp-log-entry:last-child{border-bottom:none}
+
+/* Smart update / AI panel inside LP */
+#lp-paste-input{
+  width:100%;background:var(--bg3);border:1px solid var(--border2);
+  border-radius:7px;padding:8px 10px;color:var(--text);
+  font-size:11px;resize:vertical;min-height:70px;outline:none;
+}
+
+/* Mobile LP adjustments */
+@media(max-width:768px){
+  .lp-hdr{padding:10px 12px;padding-top:env(safe-area-inset-top,10px)}
+  .lp-sec-body{padding:8px 12px}
+  .lp-foot{padding:8px 10px;padding-bottom:env(safe-area-inset-bottom,8px)}
+  .lp-grid{grid-template-columns:1fr 1fr}
+  .lp-name{font-size:13px}
+}
+
+/* Laptop view — narrower LP, more compact fields */
+@media(min-width:769px) and (max-width:1366px){
+  #lp{width:380px!important}
+  .lp-grid{grid-template-columns:1fr 1fr}
+  .lp-sec-body{padding:8px 12px}
+  .lp-f input,.lp-f select{padding:5px 8px;font-size:11px}
+  .lp-f label{font-size:9px}
+  .lp-sec-hdr{padding:7px 12px}
+  .lp-foot{padding:7px 10px;gap:5px}
+  .lp-save{padding:7px 8px;font-size:11px}
+  .lp-fu-btn{padding:6px 8px;font-size:10px}
+  #app.page-mode.lp-open #page-content{margin-right:380px}
+}
+
 </style>
 
 
@@ -1619,7 +1865,7 @@ function showPage(name,btn){
 function toggleAdvFilters(){
   var d=document.getElementById('adv-filter-drawer');
   if(!d)return;
-  d.style.display=d.style.display==='none'||d.style.display===''?'flex':'none';
+  d.classList.toggle('open');
 }
 function initLeadCardEvents(){
   var el=document.getElementById('larea');
@@ -3503,9 +3749,11 @@ function dfu(id){
 function openLp(id){
   lpId=id;
   var lp=document.getElementById('lp');
-  if(lp){lp.classList.add('open');}
+  if(lp)lp.classList.add('open');
+  // Add lp-open to app so page-content gets margin
+  var app=document.getElementById('app');
+  if(app)app.classList.add('lp-open');
   renderLp();
-  // Mobile: prevent body scroll
   if(window.innerWidth<=768)document.body.style.overflow='hidden';
 }
 
@@ -3513,6 +3761,8 @@ function closeLp(){
   lpId=null;
   var lp=document.getElementById('lp');
   if(lp)lp.classList.remove('open');
+  var app=document.getElementById('app');
+  if(app)app.classList.remove('lp-open');
   document.body.style.overflow='';
 }
 
