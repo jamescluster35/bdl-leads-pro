@@ -928,6 +928,21 @@ tr:hover td{background:var(--bg3)}
   #app.page-mode.lp-open #page-content{margin-right:380px}
 }
 
+
+/* ── Maps Search ─────────────────────────────────── */
+.maps-quick-btn{padding:3px 9px;border-radius:20px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid var(--border2);background:var(--bg3);color:var(--text3);transition:all .15s}
+.maps-quick-btn:hover{background:rgba(255,106,0,.08);color:var(--orange3);border-color:rgba(255,106,0,.2)}
+.maps-result-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:7px;display:flex;gap:10px;align-items:flex-start;transition:border-color .15s}
+.maps-result-card:hover{border-color:rgba(255,106,0,.25)}
+.maps-result-icon{width:38px;height:38px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;background:var(--bg3);border:1px solid var(--border2)}
+.maps-result-name{font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.maps-result-addr{font-size:11px;color:var(--text3);margin-bottom:5px}
+.maps-result-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.maps-import-btn{padding:7px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid rgba(255,106,0,.2);background:rgba(255,106,0,.08);color:var(--orange3);white-space:nowrap;flex-shrink:0;transition:all .15s}
+.maps-import-btn:hover{background:rgba(255,106,0,.18)}
+.maps-import-btn.imported{background:rgba(34,197,94,.08);color:#4ade80;border-color:rgba(34,197,94,.2);cursor:default}
+#maps-search-input:focus{border-color:rgba(255,106,0,.4);box-shadow:0 0 0 2px rgba(255,106,0,.07)}
+
 </style>
 
 
@@ -1122,43 +1137,69 @@ tr:hover td{background:var(--bg3)}
       <div class="page-hdr">
         <div><h2>🔍 Research</h2><p>Import leads and enrich with real data</p></div>
         <div class="page-hdr-actions">
-          <button class="tb-btn" onclick="showAskMapsImport()" style="background:rgba(16,185,129,.1);color:#34d399;border-color:rgba(16,185,129,.2)">📍 Ask Maps Import</button>
+          <button class="tb-btn" onclick="showMapsSearch()" style="background:rgba(16,185,129,.1);color:#34d399;border-color:rgba(16,185,129,.2)">🗺 Maps Search</button>
+          <button class="tb-btn" onclick="showAskMapsImport()" style="background:rgba(100,116,139,.1);color:#94a3b8;border-color:#1e293b">📋 Paste Import</button>
           <button class="tb-btn" onclick="bulkPlacesUpdate()" style="background:rgba(59,130,246,.1);color:#60a5fa;border-color:rgba(59,130,246,.2)">📍 Bulk Places</button>
           <button class="tb-btn" onclick="runBatchResearch()" style="background:rgba(139,92,246,.1);color:#a78bfa;border-color:rgba(139,92,246,.2)">🤖 Batch Research</button>
         </div>
       </div>
-      <div class="page-body">
-        <div class="research-grid">
-          <div class="res-card">
-            <h3>📍 Google Places Enrichment</h3>
-            <p>Auto-fill phone, address, ZIP, rating, and evidence links for all leads missing data.</p>
-            <div id="bulk-places-status" class="res-status"></div>
-            <div class="res-progress"><div class="res-progress-bar" id="places-progress-bar"></div></div>
-            <button class="res-btn green" onclick="bulkPlacesUpdate()" style="margin-top:10px">Run Bulk Places Update</button>
+            <div class="page-body" style="padding:0;display:flex;flex-direction:column;overflow:hidden">
+        <!-- Maps Search Bar -->
+        <div style="padding:12px 14px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0">
+          <div style="display:flex;gap:7px;align-items:center;margin-bottom:8px">
+            <input id="maps-search-input" placeholder="🔍 Search Google Maps... e.g. Junk Removal Vancouver BC" autocomplete="off"
+              style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;color:var(--text);font-size:12px;outline:none"
+              onkeydown="if(event.key==='Enter')runMapsSearch()"
+              oninput="clearTimeout(window._msT);window._msT=setTimeout(runMapsSearch,700)">
+            <select id="maps-niche-sel" style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:9px 8px;color:var(--text);font-size:11px;outline:none;flex-shrink:0">
+              <option value="">Any Niche</option>
+              <option>Junk Removal</option><option>Cleaning</option><option>Dental</option>
+              <option>SaaS</option><option>Real Estate</option><option>Healthcare</option><option>Landscaping</option>
+            </select>
+            <button onclick="runMapsSearch()" class="res-btn" style="width:auto;padding:9px 14px;flex-shrink:0;font-size:12px">Search</button>
           </div>
-          <div class="res-card">
-            <h3>⚡ PageSpeed Audit</h3>
-            <p>Run Google PageSpeed on every lead's website. Fills mobile score with real data — provable tech friction.</p>
-            <div id="pagespeed-status" class="res-status"></div>
-            <div class="res-progress"><div class="res-progress-bar" id="pagespeed-progress-bar"></div></div>
-            <button class="res-btn blue" onclick="runBulkPageSpeed()">Run PageSpeed Audit</button>
-          </div>
-          <div class="res-card">
-            <h3>🤖 Gemini Deep Research</h3>
-            <p>Gemini searches the web for each company — finds complaints, BBB entries, reviews. Returns cited proof URLs.</p>
-            <div id="gemini-research-status" class="res-status"></div>
-            <div class="res-progress"><div class="res-progress-bar" id="gemini-progress-bar"></div></div>
-            <button class="res-btn purple" onclick="runBulkGeminiResearch()">🚀 Batch Gemini Research</button>
-          </div>
-          <div class="res-card">
-            <h3>📊 Research Queue</h3>
-            <p>Leads missing diagnostic data (mobile score, complaint quote, evidence link).</p>
-            <div id="research-queue-count" class="res-status">Calculating…</div>
-            <button class="res-btn" onclick="runBatchResearch()" style="margin-top:10px">🚀 Run All Research</button>
-            <div style="margin-top:6px;font-size:10px;color:var(--text4)">Batch mode: 5 leads per Gemini call = 80% token savings</div>
+          <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
+            <span style="font-size:10px;color:var(--text4)">Quick:</span>
+            <button class="maps-quick-btn" data-q="Junk Removal">🗑 Junk Removal</button>
+            <button class="maps-quick-btn" data-q="House Cleaning Service">🧹 Cleaning</button>
+            <button class="maps-quick-btn" data-q="Dental Office">🦷 Dental</button>
+            <button class="maps-quick-btn" data-q="Property Management Company">🏢 Property Mgmt</button>
+            <button class="maps-quick-btn" data-q="Landscaping Company">🌿 Landscaping</button>
           </div>
         </div>
-        <div id="research-results" style="margin-top:16px"></div>
+        <!-- Results or Tools Grid -->
+        <div style="flex:1;overflow-y:auto;padding:12px 14px">
+          <div id="maps-results-list" style="display:none"></div>
+          <div id="research-tools-grid" class="research-grid">
+            <div class="res-card">
+              <h3>📍 Google Places Enrichment</h3>
+              <p>Auto-fill phone, address, ZIP, rating for leads missing data.</p>
+              <div id="bulk-places-status" class="res-status"></div>
+              <div class="res-progress"><div class="res-progress-bar" id="places-progress-bar"></div></div>
+              <button class="res-btn green" onclick="bulkPlacesUpdate()" style="margin-top:10px">Run Bulk Places</button>
+            </div>
+            <div class="res-card">
+              <h3>⚡ PageSpeed Audit</h3>
+              <p>Run Google PageSpeed on every lead website. Free, no key.</p>
+              <div id="pagespeed-status" class="res-status"></div>
+              <div class="res-progress"><div class="res-progress-bar" id="pagespeed-progress-bar"></div></div>
+              <button class="res-btn blue" onclick="runBulkPageSpeed()">Run PageSpeed</button>
+            </div>
+            <div class="res-card">
+              <h3>🤖 Gemini Deep Research</h3>
+              <p>Batch Gemini with web search. 5 leads per call — 80% token savings.</p>
+              <div id="gemini-research-status" class="res-status"></div>
+              <div class="res-progress"><div class="res-progress-bar" id="gemini-progress-bar"></div></div>
+              <button class="res-btn purple" onclick="runBulkGeminiResearch()">🚀 Batch Research</button>
+            </div>
+            <div class="res-card">
+              <h3>📊 Research Queue</h3>
+              <p>Leads missing diagnostic data — auto-researched when idle.</p>
+              <div id="research-queue-count" class="res-status">Calculating…</div>
+              <button class="res-btn" onclick="runBatchResearch()" style="margin-top:10px">Run All Research</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -7925,6 +7966,172 @@ function executeCSVImport(){
   newLeads.forEach(function(nl){syncLead(nl);});
   newLeads.forEach(function(nl,i){setTimeout(function(){queueAutoResearch(nl.id);},1200+i*900);});
 }
+
+// ── Maps Search ───────────────────────────────────────────────────────────
+var _mapsResults=[];
+var _importedIds=new Set();
+
+function showMapsSearch(){
+  showPage('research',document.getElementById('pgbtn-research'));
+  setTimeout(function(){var i=document.getElementById('maps-search-input');if(i)i.focus();},150);
+}
+
+function runMapsSearch(){
+  var q=(document.getElementById('maps-search-input')&&document.getElementById('maps-search-input').value||'').trim();
+  var list=document.getElementById('maps-results-list');
+  var grid=document.getElementById('research-tools-grid');
+  if(!q){
+    if(list){list.style.display='none';list.innerHTML='';}
+    if(grid)grid.style.display='';
+    return;
+  }
+  if(list)list.style.display='block';
+  if(grid)grid.style.display='none';
+  if(list)list.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3);font-size:12px"><div class="spin" style="width:18px;height:18px;margin:0 auto 8px"></div>Searching Google Maps...</div>';
+
+  fetch('https://places.googleapis.com/v1/places:searchText',{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'X-Goog-Api-Key':PLACES_KEY,
+      'X-Goog-FieldMask':'places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.addressComponents,places.businessStatus'
+    },
+    body:JSON.stringify({textQuery:q,maxResultCount:10,languageCode:'en'})
+  })
+  .then(function(r){return r.json();})
+  .then(function(data){
+    if(!data.places||!data.places.length){
+      if(list)list.innerHTML='<div style="padding:32px;text-align:center;color:var(--text4);font-size:12px">No results for "'+esc(q)+'".<br>Try adding a city name.</div>';
+      return;
+    }
+    _mapsResults=data.places;
+    renderMapsResults(data.places,q);
+  })
+  .catch(function(err){
+    if(list)list.innerHTML='<div style="padding:20px;text-align:center;color:#ef4444;font-size:12px">Error: '+esc(err.message)+'<br>Check Places API key.</div>';
+  });
+}
+
+// Wire quick buttons via delegation
+document.addEventListener('click',function(e){
+  var qb=e.target.closest('.maps-quick-btn');
+  if(qb&&qb.dataset.q){
+    var i=document.getElementById('maps-search-input');
+    if(i){i.value=qb.dataset.q;runMapsSearch();}
+  }
+});
+
+function renderMapsResults(places,query){
+  var list=document.getElementById('maps-results-list');
+  if(!list)return;
+
+  var inCRM={};
+  leads.forEach(function(l){
+    if(l.phone)inCRM[l.phone.replace(/[^0-9]/g,'')]=true;
+    if(l.website)inCRM[l.website.toLowerCase().replace(/https?:\/\//,'').replace(/www\./,'').split('/')[0]]=true;
+  });
+
+  var html='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px">'
+    +'<span style="font-size:12px;color:var(--text3)"><strong style="color:var(--text)">'+places.length+'</strong> results for "'+esc(query)+'"</span>'
+    +'<button onclick="importAllMapsResults()" style="background:rgba(34,197,94,.1);color:#4ade80;border:1px solid rgba(34,197,94,.2);border-radius:6px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer">Import All New</button>'
+    +'</div>';
+
+  html+=places.map(function(p,i){
+    var name=p.displayName&&p.displayName.text||'Unknown';
+    var addr=p.formattedAddress||'';
+    var phone=p.nationalPhoneNumber||'';
+    var web=p.websiteUri||'';
+    var rating=p.rating||'';
+    var reviews=p.userRatingCount||0;
+    var placeId=p.id||'';
+    var isClosed=p.businessStatus==='PERMANENTLY_CLOSED';
+    var pClean=phone.replace(/[^0-9]/g,'');
+    var wDomain=web.toLowerCase().replace(/https?:\/\//,'').replace(/www\./,'').split('/')[0];
+    var already=(pClean&&inCRM[pClean])||(wDomain&&inCRM[wDomain])||_importedIds.has(placeId);
+    var words=name.split(' ');
+    var inits=((words[0]&&words[0][0])||'').toUpperCase()+((words[1]&&words[1][0])||'').toUpperCase();
+    return '<div class="maps-result-card" data-place-idx="'+i+'">'
+      +'<div class="maps-result-icon">'+inits+'</div>'
+      +'<div style="flex:1;min-width:0">'
+        +'<div class="maps-result-name">'+(isClosed?'<span style="color:#ef4444;font-size:10px">[CLOSED] </span>':'')+esc(name)+'</div>'
+        +'<div class="maps-result-addr">'+esc(addr)+'</div>'
+        +'<div class="maps-result-meta">'
+          +(rating?'<span style="color:#eab308;font-size:11px;font-weight:700">★ '+rating+'</span><span style="font-size:10px;color:var(--text4)">('+reviews+')</span>':'')
+          +(phone?'<span style="font-size:10px;color:var(--text3)">'+esc(phone)+'</span>':'')
+          +(web?'<a href="'+esc(web)+'" target="_blank" style="font-size:10px;color:var(--blue)">🔗 website</a>':'')
+        +'</div>'
+      +'</div>'
+      +'<button class="maps-import-btn'+(already?' imported':'')+'" data-place-idx="'+i+'" '+(already?'disabled':'')+'>'+( already?'✓ In CRM':'+ Import')+'</button>'
+      +'</div>';
+  }).join('');
+
+  list.innerHTML=html;
+
+  // Delegated import clicks
+  list.onclick=function(e){
+    var btn=e.target.closest('.maps-import-btn');
+    if(!btn||btn.disabled)return;
+    var idx2=parseInt(btn.dataset.placeIdx);
+    if(!isNaN(idx2))doImportMapsResult(idx2,btn);
+  };
+}
+
+function doImportMapsResult(idx,btn){
+  var p=_mapsResults[idx];if(!p)return;
+  var result=parsePlaceResult(p);
+  var name=p.displayName&&p.displayName.text||'Unknown';
+  var niche=document.getElementById('maps-niche-sel')&&document.getElementById('maps-niche-sel').value||'';
+  var maxId=leads.length?Math.max.apply(null,leads.map(function(l){return parseInt((l.id||'0').replace('bdl_',''))||0;})):0;
+  var maxNum=leads.length?Math.max.apply(null,leads.map(function(l){return parseInt(l.num||0)||0;})):0;
+  var t=today();
+  var nl={
+    id:'bdl_'+(maxId+1),num:maxNum+1,company:name,email:'',
+    phone:result.phone||'',website:result.website||'',
+    address:result.address||'',city:result.city||'',
+    state:result.state||'',zip:result.zip||'',
+    niche:niche,contactName:'',contactTitle:'',
+    status:'Pending',priority:5,
+    followUpDate:nbiz(t,4),lastContacted:t,
+    lastSender:(SENDERS&&SENDERS[0])||'',followUpCount:0,
+    dealValue:'',timezone:'',yearEst:'',mobileScore:'',
+    serviceFormat:'',profileStatus:'',leadDestination:'',
+    markupLoss:'',frictionFees:'',reviewDecay:'',recentComplaintQuote:'',
+    techFriction:'',priceRange:'',
+    reviewCount:String(p.userRatingCount||''),
+    strategicPlay:'',evidenceLink:result.evidenceLink||'',lastScanDate:'',
+    notes:'Google: '+(p.rating||'?')+'★ ('+( p.userRatingCount||0)+' reviews)',
+    outreachLog:[{date:t,note:'Imported from Maps Search',sender:'[Import]'}],
+    contacts:[]
+  };
+  var tz=lookupTimezone(nl);if(tz)nl.timezone=tz;
+  nl.dealValue=String(calcDealValue(nl));
+  var dups=checkDuplicateOnAdd(nl.company,'',nl.phone);
+  if(dups.length&&dups[0].score>=80){flash(name+' already in CRM','bad');return;}
+  leads.push(nl);saveLoc();syncLead(nl);
+  _importedIds.add(p.id||'');
+  if(btn){btn.textContent='✓ Imported';btn.className='maps-import-btn imported';btn.disabled=true;}
+  flash('+ '+name+' added to pipeline');
+  setTimeout(function(){queueAutoResearch(nl.id);},800);
+  rl();
+}
+
+
+function importAllMapsResults(){
+  if(!_mapsResults.length)return;
+  var count=0;
+  _mapsResults.forEach(function(p,i){
+    if(!_importedIds.has(p.id||'')){
+      setTimeout(function(){
+        var btn=document.querySelector('.maps-import-btn[data-place-idx="'+i+'"]:not(.imported):not([disabled])');
+        doImportMapsResult(i,btn);
+      },count*400);
+      count++;
+    }
+  });
+  if(count)flash('Importing '+count+' businesses...');
+  else flash('All already imported or in CRM');
+}
+
 </script>
 
 <div id="qi-panel" class="h" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.92);z-index:250;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px)">
