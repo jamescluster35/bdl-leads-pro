@@ -1084,7 +1084,8 @@ tr:hover td{background:var(--bg3)}
         </div>
         <div class="page-hdr-actions">
           <div id="scards" style="display:flex;gap:8px"></div>
-          <button class="tb-btn" onclick="showAddModal()" style="background:rgba(255,106,0,.1);color:var(--orange3);border-color:rgba(255,106,0,.2)">+ Add Lead</button>
+          <button class="tb-btn" onclick="togaf()" style="background:rgba(255,106,0,.1);color:var(--orange3);border-color:rgba(255,106,0,.2)">+ Add Lead</button>
+          <button class="tb-btn" onclick="togaf()" style="background:rgba(255,106,0,.1);color:var(--orange3);border-color:rgba(255,106,0,.2)">+ Add Lead</button>
         </div>
       </div>
       <div class="page-body">
@@ -1124,9 +1125,10 @@ tr:hover td{background:var(--bg3)}
         <div id="lftr" style="font-size:10px;color:var(--text4);padding:4px 12px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0"></div>
         <div id="pipeline-list">
           <div id="tab-leads" style="padding:0">
+            <div id="afarea"></div>
             <div id="lare"></div>
             <div id="bulk-bar"></div>
-            <div id="bulk-bar" class="h" style="position:sticky;bottom:0;background:#0a0f1e;border-top:1px solid #1e293b;padding:10px 16px;display:flex;gap:8px;align-items:center;z-index:10"></div>
+            <div id="bulk-bar-old" class="h" style="position:sticky;bottom:0;background:#0a0f1e;border-top:1px solid #1e293b;padding:10px 16px;display:flex;gap:8px;align-items:center;z-index:10"></div>
           </div>
         </div>
       </div>
@@ -3393,7 +3395,7 @@ function login(){
         setTimeout(runAutoArchive,3000);
         setTimeout(checkReEngagement,4000);
         setTimeout(function(){if(typeof renderGmailTab==='function')renderGmailTab();},600);
-        initSwipe();initGmail();
+        initSwipe();initGmail();setTimeout(initAutoSystems,1200);
         setTimeout(initAutoSystems,1200);
       // Background sync AFTER UI loads
       if(toSync.length){ge('sdot').style.background='#f59e0b';ge('stxt').textContent='Syncing '+toSync.length+'…';var si=0;(function doSync(){if(si>=toSync.length){ge('sdot').style.background='#22c55e';ge('stxt').textContent='Ready';return;}syncLead(toSync[si]);si++;setTimeout(doSync,150);})();}
@@ -3420,7 +3422,7 @@ function login(){
         setTimeout(runAutoArchive,3000);
         setTimeout(checkReEngagement,4000);
         setTimeout(function(){if(typeof renderGmailTab==='function')renderGmailTab();},600);
-        initSwipe();initGmail();},200);
+        initSwipe();initGmail();setTimeout(initAutoSystems,1200);},200);
   });
 }
 function logout(){ge('app').classList.add('h');ge('login').classList.remove('h');ge('lu').value='';ge('lpw').value='';leads=[];clients=[];who='';closeLp();stopClock();}
@@ -3614,6 +3616,7 @@ function gf(){
   });
 }
 
+var showAF=false;
 function togaf(){
   showAF=!showAF;
   if(showAF){
@@ -6311,89 +6314,61 @@ function getScoreBadge(l){
 }
 
 // ── BULK ACTIONS ───────────────────────────────────────
-var selectedLeads=[];
-
-function toggleBulkSelect(id){
-  var idx=selectedLeads.indexOf(String(id));
-  if(idx>=0)selectedLeads.splice(idx,1);
-  else selectedLeads.push(String(id));
-  updateBulkBar();
-  // Update checkbox visual
-  var cb=document.getElementById('cb-'+id);
-  if(cb)cb.checked=selectedLeads.indexOf(String(id))>=0;
-}
-
-function selectAllVisible(){
-  var filt=gf();
-  selectedLeads=filt.map(function(l){return String(l.id);});
-  updateBulkBar();
-  document.querySelectorAll('.lead-cb').forEach(function(cb){cb.checked=true;});
-}
+// bulkSelected merged into bulkSelected
 
 function clearSelection(){
-  selectedLeads=[];
+  bulkSelected=[];
   updateBulkBar();
   document.querySelectorAll('.lead-cb').forEach(function(cb){cb.checked=false;});
 }
 
-function updateBulkBar(){
-  var bar=ge('bulk-bar');
-  if(!bar)return;
-  if(selectedLeads.length>0){
-    bar.style.display='flex';
-    ge('bulk-count').textContent=selectedLeads.length+' selected';
-  } else {
-    bar.style.display='none';
-  }
-}
-
 function bulkArchive(){
-  if(!selectedLeads.length)return;
-  if(!confirm('Archive '+selectedLeads.length+' leads?'))return;
+  if(!bulkSelected.length)return;
+  if(!confirm('Archive '+bulkSelected.length+' leads?'))return;
   var t=today();
-  selectedLeads.forEach(function(id){
+  bulkSelected.forEach(function(id){
     var l=leads.find(function(x){return String(x.id)===id;});
     if(!l)return;
     var archived=Object.assign({},l,{archivedDate:t,archiveReason:'Bulk archived'});
     archivedLeads.unshift(archived);
     syncArchivedLead(archived);
   });
-  leads=leads.filter(function(l){return selectedLeads.indexOf(String(l.id))<0;});
-  flash('Archived '+selectedLeads.length+' leads');
-  selectedLeads=[];
+  leads=leads.filter(function(l){return bulkSelected.indexOf(String(l.id))<0;});
+  flash('Archived '+bulkSelected.length+' leads');
+  bulkSelected=[];
   saveLoc();renderAll();
 }
 
 function bulkChangeStatus(status){
-  if(!selectedLeads.length||!status)return;
+  if(!bulkSelected.length||!status)return;
   var t=today();
   leads=leads.map(function(l){
-    if(selectedLeads.indexOf(String(l.id))<0)return l;
+    if(bulkSelected.indexOf(String(l.id))<0)return l;
     return Object.assign({},l,{status:status,lastContacted:t,followUpDate:nbiz(t,4),outreachLog:(l.outreachLog||[]).concat([{date:t,note:'Status bulk-changed to '+status,sender:''}])});
   });
-  selectedLeads.forEach(function(id){
+  bulkSelected.forEach(function(id){
     var u=leads.find(function(l){return String(l.id)===id;});
     if(u)syncLead(u);
   });
-  flash('Updated '+selectedLeads.length+' leads to '+status);
-  selectedLeads=[];
+  flash('Updated '+bulkSelected.length+' leads to '+status);
+  bulkSelected=[];
   saveLoc();renderAll();
 }
 
 function bulkDelete(){
-  if(!selectedLeads.length)return;
-  if(!confirm('Move '+selectedLeads.length+' leads to Deleted?'))return;
+  if(!bulkSelected.length)return;
+  if(!confirm('Move '+bulkSelected.length+' leads to Deleted?'))return;
   var t=today();
-  selectedLeads.forEach(function(id){
+  bulkSelected.forEach(function(id){
     var l=leads.find(function(x){return String(x.id)===id;});
     if(!l)return;
     var dl=Object.assign({},l,{deletedDate:t});
     deletedLeads.unshift(dl);
     syncDeletedLead(dl);
   });
-  leads=leads.filter(function(l){return selectedLeads.indexOf(String(l.id))<0;});
-  flash('Moved '+selectedLeads.length+' leads to Deleted','bad');
-  selectedLeads=[];
+  leads=leads.filter(function(l){return bulkSelected.indexOf(String(l.id))<0;});
+  flash('Moved '+bulkSelected.length+' leads to Deleted','bad');
+  bulkSelected=[];
   saveLoc();renderAll();
 }
 
@@ -6515,13 +6490,6 @@ function initSwipe(){
 }
 
 // ── DATE RANGE FILTER ─────────────────────────────────
-function toggleAdvFilters(){
-  var b=ge('adv-filter-bar');
-  if(!b)return;
-  var shown=b.style.display!=='none'&&b.style.display!=='';
-  b.style.display=shown?'none':'flex';
-  ge('adv-toggle-btn').textContent=shown?'⚙ Filters':'⚙ Hide Filters';
-}
 function clearAdvFilters(){
   var ids=['f-date-from','f-date-to','f-dm','f-score-min'];
   ids.forEach(function(id){var el=ge(id);if(el)el.value='';});
@@ -7989,6 +7957,11 @@ function runMapsSearch(){
   if(grid)grid.style.display='none';
   if(list)list.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3);font-size:12px"><div class="spin" style="width:18px;height:18px;margin:0 auto 8px"></div>Searching Google Maps...</div>';
 
+  if(!PLACES_KEY||PLACES_KEY.length<10){
+    if(list)list.innerHTML='<div style="padding:24px;text-align:center;color:#ef4444;font-size:12px">Places API key not configured.<br><span style="font-size:10px;color:var(--text4)">Add PLACES_KEY in the HTML file.</span></div>';
+    return;
+  }
+  console.log('[Maps] Searching for:',q,'with key:',PLACES_KEY.substring(0,8)+'...');
   fetch('https://places.googleapis.com/v1/places:searchText',{
     method:'POST',
     headers:{
@@ -7998,17 +7971,30 @@ function runMapsSearch(){
     },
     body:JSON.stringify({textQuery:q,maxResultCount:10,languageCode:'en'})
   })
-  .then(function(r){return r.json();})
+  .then(function(r){
+    if(!r.ok){
+      return r.json().then(function(e){
+        var msg=(e.error&&e.error.message)||('HTTP '+r.status);
+        if(list)list.innerHTML='<div style="padding:20px;text-align:center;color:#ef4444;font-size:12px">API Error: '+esc(msg)+'</div>';
+        throw new Error(msg);
+      });
+    }
+    return r.json();
+  })
   .then(function(data){
     if(!data.places||!data.places.length){
-      if(list)list.innerHTML='<div style="padding:32px;text-align:center;color:var(--text4);font-size:12px">No results for "'+esc(q)+'".<br>Try adding a city name.</div>';
+      if(list)list.innerHTML='<div style="padding:32px;text-align:center;color:var(--text4);font-size:12px">No results for "'+esc(q)+'".<br>Try adding a city name or different keywords.</div>';
       return;
     }
     _mapsResults=data.places;
     renderMapsResults(data.places,q);
   })
   .catch(function(err){
-    if(list)list.innerHTML='<div style="padding:20px;text-align:center;color:#ef4444;font-size:12px">Error: '+esc(err.message)+'<br>Check Places API key.</div>';
+    console.error('[Maps Search]',err);
+    if(list)list.innerHTML='<div style="padding:20px;text-align:center;color:#ef4444;font-size:12px">'
+      +'Search error: '+esc(err.message||'Unknown error')+'<br>'
+      +'<span style="font-size:10px;color:var(--text4)">Check: 1) Places API key valid 2) Key not expired 3) Billing enabled</span>'
+      +'</div>';
   });
 }
 
