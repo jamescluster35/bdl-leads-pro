@@ -1101,7 +1101,9 @@ tr:hover td{background:var(--bg3)}
           <datalist id="niche-list"></datalist>
           <input id="fpri" list="pri-list" placeholder="Priority" oninput="rl()" style="width:90px">
           <datalist id="pri-list"><option value="High"><option value="Medium"><option value="Low"></datalist>
-          <button id="open-now-btn" onclick="toggleOpenNow()" style="background:rgba(34,197,94,.1);color:#4ade80;border:1px solid rgba(34,197,94,.2);border-radius:6px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">🟢 Open Now</button>
+          <select id="fsender" onchange="rl()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 8px;color:var(--text);font-size:11px;outline:none;display:none"></select>
+          <select id="f-trigger" onchange="rl()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 8px;color:var(--text);font-size:11px;outline:none;display:none"></select>
+          <button id="open-now-btn" onclick="toggleOpenNow()"  style="background:rgba(34,197,94,.1);color:#4ade80;border:1px solid rgba(34,197,94,.2);border-radius:6px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">🟢 Open Now</button>
           <button onclick="toggleAdvFilters()" style="background:rgba(100,116,139,.1);color:#94a3b8;border:1px solid #1e293b;border-radius:6px;padding:6px 10px;font-size:11px;cursor:pointer">⚙️ Filters</button>
         </div>
         <div id="adv-filter-drawer" style="display:none;padding:8px 16px;border-bottom:1px solid #1a1a1a;background:#03060e;display:none;flex-wrap:wrap;gap:6px">
@@ -1305,9 +1307,9 @@ tr:hover td{background:var(--bg3)}
           <h3 style="font-size:13px;font-weight:700;color:#e2e8f0;margin:0 0 12px">🔴 Top Revenue Leakage Targets</h3>
           <div id="leakage-board"></div>
         </div>
-        <div id="tab-dashboard" style="margin-bottom:12px"></div>
+        <div id="tab-dashboard" style="margin-bottom:12px"><div id="darea"></div></div>
         <div id="tab-kanban" class="h" style="margin-bottom:12px"><div id="kb-area" style="overflow-x:auto;padding:4px 0"></div></div>
-        <div id="tab-clients" class="h"><div id="cl-area"></div></div>
+        <div id="tab-clients" class="h"><div id="cl-area"></div><div id="carea"></div></div>
       </div>
     </div>
 
@@ -1536,7 +1538,14 @@ var FRESH_START_DATE='2026-05-01';
 var leads=[],clients=[],deletedLeads=[],archivedLeads=[],who='',lpId=null,cvt=null,showAF=false;
 var clockInterval=null;
 
-function ge(id){return document.getElementById(id);}
+function ge(id){
+  var el=document.getElementById(id);
+  if(!el){
+    // Return a safe stub so ge().value and ge().innerHTML never throw
+    return{value:'',innerHTML:'',textContent:'',style:{},classList:{add:function(){},remove:function(){},toggle:function(){},contains:function(){return false;}},addEventListener:function(){},removeEventListener:function(){},focus:function(){},click:function(){},getAttribute:function(){return'';},setAttribute:function(){},closest:function(){return null;}};
+  }
+  return el;
+}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function today(){return new Date().toISOString().split('T')[0];}
 function now2(){return new Date().toLocaleString();}
@@ -3485,12 +3494,15 @@ function updateClocks(){if(lpId){var l=leads.find(function(x){return String(x.id
 
 function initNF(){}
 function stab(n,btn){
-  // In page mode, stab manages sub-views within Intelligence page
-  var intelTabs=['dashboard','kanban','clients'];
   var allPageTabs=['leads','clients','dashboard','gmail','deleted','archived','kanban'];
-  allPageTabs.forEach(function(t){var el=ge('tab-'+t);if(el)el.classList.add('h');});
+  allPageTabs.forEach(function(t){
+    var el=document.getElementById('tab-'+t);
+    if(el)el.classList.add('h');
+  });
   document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('on');});
-  var el=ge('tab-'+n);if(!el)return;el.classList.remove('h');el.style.animation='none';requestAnimationFrame(function(){el.style.animation='';});btn.classList.add('on');if(n==='clients')rc();if(n==='dashboard')renderDash();if(n==='deleted')renderDeleted();if(n==='archived')renderArchived();if(n==='kanban')renderKanban();if(n==='gmail')renderGmailTab();}
+  var el=document.getElementById('tab-'+n);
+  if(!el)return;
+  el.classList.remove('h');el.style.animation='none';requestAnimationFrame(function(){el.style.animation='';});btn.classList.add('on');if(n==='clients')rc();if(n==='dashboard')renderDash();if(n==='deleted')renderDeleted();if(n==='archived')renderArchived();if(n==='kanban')renderKanban();if(n==='gmail')renderGmailTab();}
 function renderAll(){if(!deletedLeads)deletedLeads=[];rs();ra();rl();renderDash();populateNicheList();if(!archivedLeads)archivedLeads=[];ge('lcount').textContent=leads.length+' leads · '+clients.length+' clients'+(deletedLeads.length?' - Deleted:'+deletedLeads.length:'')+(archivedLeads.length?' - Archived:'+archivedLeads.length:'');updateDelTabBadge();updateArchiveTabBadge();}
 
 function rs(){
@@ -3692,7 +3704,7 @@ function rl(){
   // Don't call rs() and ra() here - renderAll() already does it
   var filt=sortLeads(gf());
   if(currentPage>Math.ceil(filt.length/PAGE_SIZE))currentPage=1;
-  if(!filt.length){ge('larea').innerHTML='<div style="text-align:center;padding:48px;color:#111">No leads found.</div>';ge('lftr').textContent='0 of '+leads.length;return;}
+  if(!filt.length){ge('lare').innerHTML='<div style="text-align:center;padding:48px;color:#111">No leads found.</div>';ge('lftr').textContent='0 of '+leads.length;return;}
   var t=today();
   var rows=filt.map(function(l,i){
     var lid=String(l.id);
@@ -3759,7 +3771,7 @@ function rl(){
       (dueTodayL.length?'<span style="background:rgba(234,179,8,.1);color:#eab308;border:1px solid rgba(234,179,8,.2);border-radius:5px;padding:2px 8px;font-size:10px;font-weight:700">📅 Due Today</span>':'')+
     '</div>';
   }
-  ge('larea').innerHTML=todayBanner+'<div>'+rows.join('')+'</div>';
+  ge('lare').innerHTML=todayBanner+'<div>'+rows.join('')+'</div>';
   setTimeout(initLeadCardEvents,0);
   ge('lftr').textContent=filt.length+' of '+leads.length+' leads · auto-sorted by priority';
 }
@@ -4442,7 +4454,7 @@ function copyForClaude(){
 }
 
 // ── BULK CSV IMPORT ──────────────────────────────────
-function trigImport(){ge('csvFileIn').click();}
+function trigImport(){(ge('csvFileIn')||{click:function(){}}).click();}
 
 function handleImport(e){
   var file=e.target.files[0];
@@ -5213,7 +5225,7 @@ function syncArchivedRemove(id){
 // ── ARCHIVE TAB ────────────────────────────────────────
 function updateArchiveTabBadge(){
   if(!archivedLeads)archivedLeads=[];
-  var btn=ge('arc-tab-btn');if(!btn)return;
+  var btn=(ge('arc-tab-btn')||{textContent:'',classList:{add:function(){},remove:function(){}}});if(!btn)return;
   btn.textContent=archivedLeads.length?'Archived ('+archivedLeads.length+')':'Archived';
 }
 
@@ -6407,7 +6419,7 @@ function goPage(p){
   var pages=Math.ceil(filt.length/PAGE_SIZE);
   currentPage=Math.max(1,Math.min(pages,p));
   renderLeadsTable(filt);
-  ge('larea').scrollIntoView({behavior:'smooth',block:'start'});
+  ge('lare').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 // ── SENDER PERFORMANCE ─────────────────────────────────
@@ -7754,8 +7766,8 @@ function renderGmailTab() {
 
 // Test Gmail setup configuration
 function testGmailSetup() {
-  var statusEl = ge('test-status');
-  var resultsEl = ge('test-results');
+  var statusEl = (ge('test-status')||{innerHTML:'',textContent:''});
+  var resultsEl = (ge('test-results')||{innerHTML:'',textContent:''});
   statusEl.textContent = 'Testing...';
   statusEl.style.background = 'rgba(249,115,22,.3)';
   statusEl.style.color = '#f97316';
