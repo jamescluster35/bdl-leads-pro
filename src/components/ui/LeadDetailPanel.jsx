@@ -18,6 +18,62 @@ export default function LeadDetailPanel({ lead, onClose }) {
   const [logTemplate, setLogTemplate] = useState('')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
+  // Local Ollama AI states
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiDraft, setAiDraft] = useState('')
+  const [aiError, setAiError] = useState('')
+
+  const handleGenerateAIDraft = async () => {
+    const selectedTempObj = templates.find(t => t.name === logTemplate)
+    if (!selectedTempObj) return
+
+    setAiLoading(true)
+    setAiError('')
+    setAiDraft('')
+
+    const systemPrompt = `You are an expert business outreach copywriter for Blue Data Labs. 
+Generate a highly personalized email draft using the following template and lead details. 
+Ensure all variable tokens like {{company}}, {{firstName}}, {{city}}, {{niche}}, etc., are correctly replaced with lead information.
+Do not add preamble or pleasantries like "Here is your email". Return ONLY the subject and body.
+
+TEMPLATE SUBJECT: ${selectedTempObj.subject}
+TEMPLATE BODY: ${selectedTempObj.body}
+
+LEAD DETAILS:
+Company: ${lead.company || ''}
+Contact Person: ${lead.contact || 'Business Owner'}
+First Name: ${(lead.contact || '').split(' ')[0] || 'Business Owner'}
+Niche: ${lead.niche || ''}
+City: ${lead.city || ''}
+State: ${lead.state || ''}
+Timezone: ${lead.timezone || ''}
+Last Sender: ${lead.lastSender || ''}
+Lead Notes: ${lead.notes || 'No notes recorded.'}`;
+
+    try {
+      const response = await fetch('http://localhost:11434/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'llama3',
+          prompt: systemPrompt,
+          stream: false
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Local Ollama server returned an error. Ensure Ollama is running and Llama3 is pulled.');
+      }
+
+      const data = await response.json();
+      setAiDraft(data.response);
+    } catch (err) {
+      setAiError(err.message || 'Failed to connect to local Ollama. Start Ollama and run `ollama run llama3`.');
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
   // Replace form state
   const [replaceForm, setReplaceForm] = useState({
     company: '',
@@ -265,6 +321,55 @@ export default function LeadDetailPanel({ lead, onClose }) {
                       <option key={t.id} value={t.name}>{t.name}</option>
                     ))}
                   </select>
+                  {logTemplate && (
+                    <div className="mt-1 border border-gray-800 rounded-lg p-3 bg-gray-800/30 flex flex-col gap-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-400 font-semibold flex items-center gap-1">✨ Local AI Drafting</span>
+                        <button
+                          type="button"
+                          onClick={handleGenerateAIDraft}
+                          disabled={aiLoading}
+                          className="bg-orange-600/20 text-orange-400 hover:bg-orange-600/30 border border-orange-500/20 text-xs px-2.5 py-1 rounded transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                        >
+                          {aiLoading ? (
+                            <>
+                              <span className="w-3 h-3 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
+                              Generating...
+                            </>
+                          ) : (
+                            'Generate AI Draft'
+                          )}
+                        </button>
+                      </div>
+
+                      {aiError && (
+                        <p className="text-red-400 text-xs bg-red-500/5 border border-red-500/20 p-2 rounded">
+                          {aiError}
+                        </p>
+                      )}
+
+                      {aiDraft && (
+                        <div className="flex flex-col gap-2">
+                          <textarea
+                            readOnly
+                            value={aiDraft}
+                            rows={8}
+                            className="w-full bg-gray-950 border border-gray-800 text-gray-200 text-xs rounded p-2 font-mono resize-none focus:outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(aiDraft);
+                              setLogEntry(`[Copied AI Draft] Sent outreach based on ${logTemplate}`);
+                            }}
+                            className="bg-gray-800 hover:bg-gray-750 text-gray-300 text-xs py-1 rounded border border-gray-700 transition-colors cursor-pointer"
+                          >
+                            📋 Copy to Clipboard
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <div className="flex gap-2">
                     <input
                       value={logEntry}
