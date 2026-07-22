@@ -1,8 +1,9 @@
 import { useState, useRef, useCallback, useMemo } from 'react'
+import * as XLSX from 'xlsx'
 import { sheetsApi } from '../lib/sheetsApi'
 
 // ─── Email Validation ─────────────────────────────────────────────────────
-const EMAIL_REGEX = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,7}$/
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,7}$/
 const JUNK_PREFIXES = ['noreply', 'no-reply', 'donotreply', 'mailer-daemon', 'bounce', 'postmaster', 'abuse@', 'support@wix', 'info@example', 'admin@example', 'test@']
 const JUNK_DOMAINS  = ['example.com', 'wixpress.com', 'sentry.io', 'mailchimp.com', 'sendgrid.net']
 
@@ -17,126 +18,103 @@ function isValidEmail(email) {
 }
 
 // ─── Niche Detector ───────────────────────────────────────────────────────
-function detectNiche(searchQuery = '', category = '') {
-  const text = (searchQuery + ' ' + category).toLowerCase()
-  if (text.includes('dental') || text.includes('dentist'))           return 'dental'
-  if (text.includes('restaurant') || text.includes('hospitality') || text.includes('food service') || text.includes('food')) return 'restaurant'
-  if (text.includes('real estate') || text.includes('realtor') || text.includes('realty')) return 'realestate'
-  if (text.includes('health') || text.includes('clinic') || text.includes('medical')) return 'healthcare'
-  if (text.includes('law') || text.includes('legal') || text.includes('attorney')) return 'legal'
-  if (text.includes('saas') || text.includes('software') || text.includes('tech')) return 'saas'
-  return 'general'
+function detectNiche(searchQuery = '', category = '', companyName = '') {
+  const text = (searchQuery + ' ' + category + ' ' + companyName).toLowerCase()
+  if (text.includes('property') || text.includes('pm') || text.includes('hoa') || text.includes('apartment') || text.includes('multifamily')) return 'property_management'
+  if (text.includes('proptech')) return 'proptech'
+  if (text.includes('hvac')) return 'hvac'
+  if (text.includes('roofing') || text.includes('roofer')) return 'roofing'
+  if (text.includes('insurance')) return 'insurance'
+  if (text.includes('pest')) return 'pest_control'
+  if (text.includes('elevator')) return 'elevator'
+  if (text.includes('marketing')) return 'multifamily_marketing'
+  if (text.includes('amenity') || text.includes('amenities')) return 'resident_amenities'
+  if (text.includes('internet') || text.includes('telecom')) return 'internet_providers'
+  if (text.includes('security') || text.includes('access')) return 'security_access'
+  return 'property_management'
 }
 
-// ─── Email Templates ──────────────────────────────────────────────────────
+// ─── Email Templates (Clean Cold Intro Outreach - No Prices/Numbers) ─────
 const TEMPLATES = {
-  dental: {
-    subject: (name) => `${name} — Quick question about appointment losses`,
+  property_management: {
+    subject: (name) => `quick question regarding ${name && name !== 'there' ? name : 'your team'}`,
     body: (name, city) => `Hi there,
 
-I came across ${name} while researching dental practices in ${city}.
+I came across ${name && name !== 'there' ? name : 'your team'} and noticed your property management & real estate operations in ${city || 'your market'}.
 
-I run a small revenue audit service called Blue Data Labs. We help dental practices find where they're quietly losing revenue — no-shows, unscheduled recalls, new patient follow-up gaps.
+We recently compiled a verified list of vetted local vendor partners & service providers (HVAC, Roofing, PropTech, Security, Amenities) in ${city || 'your area'}.
 
-On average, our audits surface $1,800–$3,200/month in recoverable revenue for offices your size.
+Are you currently open to receiving qualified vendor referrals or contractor partners in ${city || 'your area'} right now?
 
-We have a free 2-minute calculator that shows exactly where it's coming from:
-👉 https://bdl.dataconnectmail.com
+If so, let me know and I'd be glad to send over a quick preview for your team to take a look at.
 
-No obligation, no sales call — just an honest look at the numbers.
-
-— James
-Blue Data Labs | Revenue Audit Service`
+Best regards,
+James
+Blue Data Labs`
   },
-  restaurant: {
-    subject: (name) => `${name} — Quick question about delivery & waste costs`,
+  proptech: {
+    subject: (name) => `quick question for ${name && name !== 'there' ? name : 'your team'}`,
     body: (name, city) => `Hi there,
 
-I found ${name} while researching restaurants in ${city}.
+I came across ${name && name !== 'there' ? name : 'your team'} and noticed your work in property technology & software solutions.
 
-I run Blue Data Labs — a small revenue audit service. We help restaurant owners find hidden leakage: food waste, delivery platform commissions, no-show losses, and staff cost inefficiencies.
+We recently compiled a verified contact list of local Property Managers & HOA decision-makers in ${city || 'your target market'}.
 
-Most restaurants we audit are losing $1,500–$4,000/month without realising it.
+Are you currently looking to connect or partner with property managers in ${city || 'your area'} right now?
 
-We have a free 2-minute calculator that shows the breakdown for your restaurant:
-👉 https://bdl.dataconnectmail.com
+If so, let me know and I'd be glad to send over a quick preview for your team to take a look at.
 
-No obligation — just a real look at the numbers.
-
-— James
-Blue Data Labs | Revenue Audit Service`
+Best regards,
+James
+Blue Data Labs`
   },
-  realestate: {
-    subject: (name) => `${name} — Quick question about lead follow-up ROI`,
+  hvac: {
+    subject: (name) => `property managers in ${name || 'your area'}`,
     body: (name, city) => `Hi there,
 
-I came across ${name} while researching real estate businesses in ${city}.
+I came across ${name && name !== 'there' ? name : 'your team'} and noticed your work in HVAC & commercial mechanical services.
 
-I run Blue Data Labs — we help real estate teams find where deals are slipping: lead follow-up gaps, portal ROI issues, agent admin time waste.
+We recently compiled a verified contact list of local Property Managers & HOA decision-makers in ${city || 'your target market'}.
 
-Our audits typically surface $2,500–$6,000/month in recoverable commission for teams your size.
+Are you currently looking to connect or partner with property managers in ${city || 'your area'} right now?
 
-We have a free 2-minute calculator:
-👉 https://bdl.dataconnectmail.com
+If so, let me know and I'd be glad to send over a quick preview for your team to take a look at.
 
-No pitch — just an honest look at the numbers.
-
-— James
-Blue Data Labs | Revenue Audit Service`
+Best regards,
+James
+Blue Data Labs`
   },
-  healthcare: {
-    subject: (name) => `${name} — Quick question about patient revenue losses`,
+  roofing: {
+    subject: (name) => `quick check for ${name && name !== 'there' ? name : 'your team'}`,
     body: (name, city) => `Hi there,
 
-I found ${name} while researching healthcare practices in ${city}.
+I came across ${name && name !== 'there' ? name : 'your team'} and noticed your work in commercial roofing & property restoration.
 
-I run Blue Data Labs — we help clinics and practices identify revenue leakage from no-shows, claim denials, and referral non-conversions.
+We recently compiled a verified contact list of local Property Managers & HOA decision-makers in ${city || 'your target market'}.
 
-Our audits typically surface $1,500–$3,500/month in recoverable revenue.
+Are you currently looking to connect or partner with property managers in ${city || 'your area'} right now?
 
-Free 2-minute calculator:
-👉 https://bdl.dataconnectmail.com
+If so, let me know and I'd be glad to send over a quick preview for your team to take a look at.
 
-No obligation at all.
-
-— James
-Blue Data Labs | Revenue Audit Service`
-  },
-  legal: {
-    subject: (name) => `${name} — Quick question about billable hour recovery`,
-    body: (name, city) => `Hi there,
-
-I came across ${name} while researching law firms in ${city}.
-
-I run Blue Data Labs — we help firms recover unbilled attorney time and improve consultation conversion rates.
-
-Most firms we audit find $3,000–$8,000/month in recoverable billable revenue.
-
-Free 2-minute calculator:
-👉 https://bdl.dataconnectmail.com
-
-No obligation.
-
-— James
-Blue Data Labs | Revenue Audit Service`
+Best regards,
+James
+Blue Data Labs`
   },
   general: {
-    subject: (name) => `${name} — Quick question about your revenue`,
+    subject: (name) => `quick question for ${name && name !== 'there' ? name : 'your team'}`,
     body: (name, city) => `Hi there,
 
-I found ${name} while researching businesses in ${city}.
+I came across ${name && name !== 'there' ? name : 'your team'} and noticed your work in ${city || 'your industry'}.
 
-I run Blue Data Labs — a small revenue audit service. We help business owners find where revenue is quietly leaking out: missed follow-ups, tool cost waste, admin time losses.
+We recently compiled a verified contact list of local Property Managers & HOA decision-makers in ${city || 'your target market'}.
 
-Most businesses we audit find $1,200–$3,500/month they didn't know they were losing.
+Are you currently looking to connect or partner with property managers in ${city || 'your area'} right now?
 
-Free 2-minute calculator:
-👉 https://bdl.dataconnectmail.com
+If so, let me know and I'd be glad to send over a quick preview for your team to take a look at.
 
-No obligation.
-
-— James
-Blue Data Labs | Revenue Audit Service`
+Best regards,
+James
+Blue Data Labs`
   }
 }
 
@@ -208,9 +186,24 @@ export default function CampaignPage() {
   const [sendDone, setSendDone]     = useState(false)
   const [previewLead, setPreviewLead] = useState(null)
   
-  // Table search & filter states
+  // 1-Click Industry Niche Override State
+  const [globalNiche, setGlobalNiche] = useState('auto')
   const [searchQuery, setSearchQuery] = useState('')
   const [activeNicheFilter, setActiveNicheFilter] = useState('all')
+
+  // Interactive 2-Step Import Wizard States
+  const [importStep, setImportStep]       = useState('select') // 'select' | 'mapping'
+  const [parsedFileName, setParsedFileName] = useState('')
+  const [parsedRawRows, setParsedRawRows] = useState([])
+  const [fileHeaders, setFileHeaders]     = useState([])
+  
+  // Mapped Columns State
+  const [mapCompany, setMapCompany] = useState('')
+  const [mapEmail, setMapEmail]     = useState('')
+  const [mapCity, setMapCity]       = useState('')
+  const [mapWebsite, setMapWebsite] = useState('')
+  const [mapNicheCol, setMapNicheCol] = useState('')
+  const [hardcodedIndustry, setHardcodedIndustry] = useState('none')
 
   const fileRef = useRef()
 
@@ -219,39 +212,131 @@ export default function CampaignPage() {
   const clearSentLog  = () => { localStorage.removeItem('bdl_campaign_sent'); setSentLogCount(0) }
   const [sentLogCount, setSentLogCount] = useState(() => getSentLog().size)
 
-  const processFile = (file) => {
-    if (!file || !file.name.endsWith('.csv')) { alert('Please upload a .csv file from the BDL Lead Scraper output folder.'); return }
+  const processFile = useCallback((file) => {
+    if (!file) return
+    const isExcel = file.name.endsWith('.xlsx') || file.name.endsWith('.xls')
+    const isCSV = file.name.endsWith('.csv')
+
+    if (!isExcel && !isCSV) {
+      alert('Please upload an Excel (.xlsx) or CSV (.csv) file.')
+      return
+    }
+
+    setParsedFileName(file.name)
+
     const reader = new FileReader()
     reader.onload = (ev) => {
-      const rows = parseCSV(ev.target.result)
-      const sentLog = getSentLog()
-      const seenEmails = new Set()
-      let noEmail = 0, invalidEmail = 0, duplicate = 0, alreadySent = 0
+      let parsedData
+      try {
+        if (isExcel) {
+          const workbook = XLSX.read(ev.target.result, { type: 'array' })
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
+          parsedData = XLSX.utils.sheet_to_json(firstSheet, { defval: '' })
+        } else {
+          parsedData = parseCSV(ev.target.result)
+        }
+      } catch (err) {
+        alert('Failed to parse file: ' + err.message)
+        return
+      }
 
-      const clean = rows.filter(row => {
-        const email = (row['Email'] || '').trim().toLowerCase()
-        if (!email)              { noEmail++;      return false }
-        if (!isValidEmail(email)){ invalidEmail++; return false }
-        if (seenEmails.has(email)){ duplicate++;   return false }
-        if (sentLog.has(email))  { alreadySent++;  return false }
-        seenEmails.add(email)
-        return true
-      }).map(row => ({
-        ...row,
-        _niche: detectNiche(row['Search Query'] || '', row['Category'] || ''),
-        _email: (row['Email'] || '').trim().toLowerCase(),
-      }))
+      if (!parsedData.length) {
+        alert('Uploaded file is empty.')
+        return
+      }
 
-      const sel = {}
-      clean.forEach((_, i) => { sel[i] = true })
-      setCleanRows(clean)
-      setSelected(sel)
-      setStats({ total: rows.length, noEmail, invalid: invalidEmail, duplicate, alreadySent, clean: clean.length })
-      setSendDone(false)
-      setTab('review')
+      const headers = Object.keys(parsedData[0] || {})
+      setFileHeaders(headers)
+      setParsedRawRows(parsedData)
+
+      // Auto-guess column mappings
+      let autoComp = '', autoEm = '', autoCity = '', autoWeb = '', autoNiche = ''
+      headers.forEach(h => {
+        const k = h.trim().toLowerCase()
+        if (!autoEm && (k.includes('email') || k.includes('value') || k === 'mail')) autoEm = h
+        if (!autoComp && (k.includes('company') || k.includes('business') || k.includes('name') || k === 'title')) autoComp = h
+        if (!autoCity && (k.includes('city') || k.includes('location') || k.includes('address'))) autoCity = h
+        if (!autoWeb && (k.includes('website') || k.includes('domain') || k.includes('url') || k.includes('site'))) autoWeb = h
+        if (!autoNiche && (k.includes('niche') || k.includes('category') || k.includes('industry') || k.includes('variant'))) autoNiche = h
+      })
+
+      setMapCompany(autoComp || headers[0] || '')
+      setMapEmail(autoEm || headers[1] || headers[0] || '')
+      setMapCity(autoCity || '')
+      setMapWebsite(autoWeb || '')
+      setMapNicheCol(autoNiche || '')
+      setHardcodedIndustry('none')
+
+      setImportStep('mapping')
     }
-    reader.readAsText(file)
+
+    if (isExcel) {
+      reader.readAsArrayBuffer(file)
+    } else {
+      reader.readAsText(file)
+    }
+  }, [])
+
+  const finalizeImport = () => {
+    if (!mapEmail) {
+      alert('Please select the Email column.')
+      return
+    }
+
+    const sentLog = getSentLog()
+    const seenEmails = new Set()
+    let noEmail = 0, invalidEmail = 0, duplicate = 0, alreadySent = 0
+
+    const clean = parsedRawRows.filter(row => {
+      const email = String(row[mapEmail] || '').trim().toLowerCase()
+      if (!email)              { noEmail++;      return false }
+      if (!isValidEmail(email)){ invalidEmail++; return false }
+      if (seenEmails.has(email)){ duplicate++;   return false }
+      if (sentLog.has(email))  { alreadySent++;  return false }
+      seenEmails.add(email)
+      return true
+    }).map(row => {
+      const comp = mapCompany ? String(row[mapCompany] || '').trim() : ''
+      const email = String(row[mapEmail] || '').trim().toLowerCase()
+      const city = mapCity ? String(row[mapCity] || '').trim() : ''
+      const web = mapWebsite ? String(row[mapWebsite] || '').trim() : ''
+      const nicheVal = mapNicheCol ? String(row[mapNicheCol] || '').trim() : ''
+
+      let parsedNiche
+      if (hardcodedIndustry !== 'none') {
+        parsedNiche = hardcodedIndustry
+      } else if (nicheVal) {
+        parsedNiche = detectNiche(nicheVal, '', comp)
+      } else {
+        parsedNiche = detectNiche('', '', comp)
+      }
+
+      return {
+        ...row,
+        Company: comp || 'Business',
+        Email: email,
+        City: city,
+        Website: web,
+        _niche: parsedNiche,
+        _email: email,
+      }
+    })
+
+    const sel = {}
+    clean.forEach((_, i) => { sel[i] = true })
+    setCleanRows(clean)
+    setSelected(sel)
+    setStats({ total: parsedRawRows.length, noEmail, invalid: invalidEmail, duplicate, alreadySent, clean: clean.length })
+    setSendDone(false)
+    setImportStep('select')
+    setTab('review')
   }
+
+  const onDrop = useCallback((e) => {
+    e.preventDefault(); setIsDragging(false)
+    const file = e.dataTransfer.files[0]
+    if (file) processFile(file)
+  }, [processFile])
 
   const toggleAll = (val) => {
     const next = { ...selected }
@@ -315,14 +400,15 @@ export default function CampaignPage() {
 
     for (let i = 0; i < selectedRows.length; i++) {
       const lead = selectedRows[i]
-      const tmpl = getTemplate(lead._niche, lead['Name'], lead['City'])
+      const targetNiche = globalNiche !== 'auto' ? globalNiche : lead._niche
+      const tmpl = getTemplate(targetNiche, lead['Company'] || lead['Name'], lead['City'])
       const timestamp = new Date().toLocaleTimeString()
       
       const newLog = {
         time: timestamp,
         email: lead._email,
-        name: lead['Name'] || 'Business',
-        niche: lead._niche,
+        name: lead['Company'] || lead['Name'] || 'Business',
+        niche: targetNiche,
         status: 'sending'
       }
 
@@ -332,7 +418,7 @@ export default function CampaignPage() {
       }))
 
       try {
-        const res = await sheetsApi.sendColdOutreach({ to: lead._email, name: lead['Name'] || '', city: lead['City'] || '', niche: lead._niche, subject: tmpl.subject, body: tmpl.body })
+        const res = await sheetsApi.sendColdOutreach({ to: lead._email, name: lead['Company'] || lead['Name'] || '', city: lead['City'] || '', niche: targetNiche, subject: tmpl.subject, body: tmpl.body })
         
         if (res && res.success) {
           sentEmails.push(lead._email)
@@ -370,13 +456,7 @@ export default function CampaignPage() {
     setSelected({})
   }
 
-  const onDrop = useCallback((e) => {
-    e.preventDefault(); setIsDragging(false)
-    const file = e.dataTransfer.files[0]
-    if (file) processFile(file)
-  }, [])
-
-  const preview = previewLead ? getTemplate(previewLead._niche, previewLead['Name'], previewLead['City']) : null
+  const preview = previewLead ? getTemplate(globalNiche !== 'auto' ? globalNiche : previewLead._niche, previewLead['Company'] || previewLead['Name'], previewLead['City']) : null
 
   // Cleaning breakdown percentages for Tab 2
   const statsBreakdown = useMemo(() => {
@@ -417,44 +497,194 @@ export default function CampaignPage() {
         )}
       </div>
 
-      {/* Tabs Menu */}
-      <div className="flex bg-gray-900/60 p-1.5 rounded-xl border border-gray-800/80 gap-1 w-fit">
-        {[
-          { id: 'import', label: '📥 Import & Clean' },
-          { id: 'review', label: `📋 Review Leads ${cleanRows.length > 0 ? `(${cleanRows.length})` : ''}` },
-          { id: 'send',   label: '📤 Send Outreach' },
-        ].map(t => (
-          <button 
-            key={t.id} 
-            onClick={() => setTab(t.id)} 
-            className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${tab === t.id ? 'bg-orange-600 text-white shadow-lg shadow-orange-600/10' : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/40'}`}
+      {/* Tabs & Global Niche Selector Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex bg-gray-900/60 p-1.5 rounded-xl border border-gray-800/80 gap-1 w-fit">
+          {[
+            { id: 'import', label: '📥 Import & Clean' },
+            { id: 'review', label: `📋 Review Leads ${cleanRows.length > 0 ? `(${cleanRows.length})` : ''}` },
+            { id: 'send',   label: '📤 Send Outreach' },
+          ].map(t => (
+            <button 
+              key={t.id} 
+              onClick={() => setTab(t.id)} 
+              className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${tab === t.id ? 'bg-orange-600 text-white shadow-lg shadow-orange-600/10' : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/40'}`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* 1-Click Industry Niche Override Dropdown */}
+        <div className="flex items-center gap-2 bg-gray-900/80 border border-gray-800 px-4 py-2 rounded-xl">
+          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">🎯 Select Campaign Industry:</span>
+          <select 
+            value={globalNiche} 
+            onChange={(e) => setGlobalNiche(e.target.value)}
+            className="bg-gray-950 border border-gray-700 text-orange-400 text-xs font-bold rounded-lg px-3 py-1.5 focus:outline-none focus:border-orange-500 cursor-pointer"
           >
-            {t.label}
-          </button>
-        ))}
+            <option value="auto">🤖 Auto-Detect per Company</option>
+            <option value="property_management">🏢 Property Management Outreach</option>
+            <option value="proptech">🚀 PropTech Companies</option>
+            <option value="hvac">❄️ HVAC Vendors</option>
+            <option value="roofing">🏠 Roofing Vendors</option>
+            <option value="insurance">🛡️ Insurance Providers</option>
+            <option value="pest_control">🐜 Pest Control</option>
+            <option value="elevator">🛗 Elevator Services</option>
+            <option value="multifamily_marketing">📣 Multifamily Marketing</option>
+            <option value="resident_amenities">🎁 Resident Amenities</option>
+            <option value="internet_providers">🌐 Internet & Telecom</option>
+            <option value="security_access">🔒 Security & Access Control</option>
+            <option value="general">💼 General B2B Vendors</option>
+          </select>
+        </div>
       </div>
 
       {/* ── TAB 1: IMPORT ─────────────────────────────────────────────── */}
       {tab === 'import' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            <div
-              onDrop={onDrop}
-              onDragOver={e => { e.preventDefault(); setIsDragging(true) }}
-              onDragLeave={() => setIsDragging(false)}
-              onClick={() => fileRef.current?.click()}
-              className={`border-2 border-dashed rounded-3xl p-16 text-center cursor-pointer transition-all duration-300 flex flex-col items-center justify-center min-h-[340px] ${isDragging ? 'border-orange-500 bg-orange-600/5' : 'border-gray-800 bg-gray-900/20 hover:border-gray-700 hover:bg-gray-900/40'}`}
-            >
-              <div className="w-16 h-16 bg-gray-900 rounded-2xl border border-gray-800 flex items-center justify-center text-3xl mb-5 shadow-inner">📄</div>
-              <h3 className="text-white font-bold text-lg mb-1">Drag and drop leads database</h3>
-              <p className="text-gray-500 text-sm max-w-sm mb-6">
-                Drag a <code className="bg-gray-800 px-1.5 py-0.5 rounded text-orange-400 font-mono text-xs">.csv</code> file exported from the BDL Lead Scraper app.
-              </p>
-              <div className="bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold px-6 py-3 rounded-xl transition-all shadow-md shadow-orange-600/10 hover:shadow-orange-600/20">
-                📂 Browse Local File
+            {importStep === 'mapping' ? (
+              <div className="bg-gray-900/80 border border-gray-800 rounded-3xl p-8 space-y-6">
+                <div className="flex items-center justify-between pb-4 border-b border-gray-800">
+                  <div>
+                    <h3 className="text-xl font-extrabold text-white flex items-center gap-2">
+                      <span>📋 Step 2: Map Columns & Industry Niche</span>
+                    </h3>
+                    <p className="text-gray-400 text-xs mt-1">
+                      Loaded file: <strong className="text-orange-400 font-mono">{parsedFileName}</strong> ({parsedRawRows.length} total rows parsed)
+                    </p>
+                  </div>
+                  <button 
+                    onClick={() => setImportStep('select')}
+                    className="text-gray-400 hover:text-gray-200 text-xs font-bold bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-lg transition-colors"
+                  >
+                    ← Select Different File
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Company Name Column */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-300 mb-2">🏢 Company Name Column:</label>
+                    <select 
+                      value={mapCompany} 
+                      onChange={e => setMapCompany(e.target.value)}
+                      className="w-full bg-gray-950 border border-gray-700 text-gray-200 text-xs font-semibold rounded-xl p-3 focus:outline-none focus:border-orange-500 cursor-pointer"
+                    >
+                      <option value="">-- None / Default to Business --</option>
+                      {fileHeaders.map(h => <option key={h} value={h}>{h}</option>)}
+                    </select>
+                  </div>
+
+                  {/* Email Address Column */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-300 mb-2">📧 Email Address Column <span className="text-red-400">*</span>:</label>
+                    <select 
+                      value={mapEmail} 
+                      onChange={e => setMapEmail(e.target.value)}
+                      className="w-full bg-gray-950 border border-orange-500/80 text-orange-400 text-xs font-bold rounded-xl p-3 focus:outline-none cursor-pointer"
+                    >
+                      {fileHeaders.map(h => <option key={h} value={h}>{h}</option>)}
+                    </select>
+                  </div>
+
+                  {/* City / Location Column */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-300 mb-2">📍 City / Location Column (Optional):</label>
+                    <select 
+                      value={mapCity} 
+                      onChange={e => setMapCity(e.target.value)}
+                      className="w-full bg-gray-950 border border-gray-700 text-gray-200 text-xs font-semibold rounded-xl p-3 focus:outline-none cursor-pointer"
+                    >
+                      <option value="">-- None / Default to Market --</option>
+                      {fileHeaders.map(h => <option key={h} value={h}>{h}</option>)}
+                    </select>
+                  </div>
+
+                  {/* Website Column */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-300 mb-2">🌐 Website Column (Optional):</label>
+                    <select 
+                      value={mapWebsite} 
+                      onChange={e => setMapWebsite(e.target.value)}
+                      className="w-full bg-gray-950 border border-gray-700 text-gray-200 text-xs font-semibold rounded-xl p-3 focus:outline-none cursor-pointer"
+                    >
+                      <option value="">-- None --</option>
+                      {fileHeaders.map(h => <option key={h} value={h}>{h}</option>)}
+                    </select>
+                  </div>
+
+                  {/* Campaign Niche / Industry Selection */}
+                  <div className="md:col-span-2 bg-gray-950/60 p-5 rounded-2xl border border-gray-800 space-y-4">
+                    <h4 className="text-xs font-bold text-orange-400 uppercase tracking-wider">🎯 Campaign Industry / Niche Assignment:</h4>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-400 mb-2">Option A: Map Industry from Column:</label>
+                        <select 
+                          value={mapNicheCol} 
+                          onChange={e => { setMapNicheCol(e.target.value); setHardcodedIndustry('none') }}
+                          disabled={hardcodedIndustry !== 'none'}
+                          className="w-full bg-gray-900 border border-gray-700 text-gray-200 text-xs font-semibold rounded-xl p-3 disabled:opacity-50 focus:outline-none cursor-pointer"
+                        >
+                          <option value="">-- Auto-Detect per Company --</option>
+                          {fileHeaders.map(h => <option key={h} value={h}>{h}</option>)}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-400 mb-2">Option B: Hardcode Industry for Whole List:</label>
+                        <select 
+                          value={hardcodedIndustry} 
+                          onChange={e => setHardcodedIndustry(e.target.value)}
+                          className="w-full bg-gray-900 border border-orange-500/50 text-orange-400 text-xs font-bold rounded-xl p-3 focus:outline-none cursor-pointer"
+                        >
+                          <option value="none">-- Don't Hardcode (Use Column / Auto-Detect) --</option>
+                          <option value="property_management">🏢 Property Management Outreach</option>
+                          <option value="proptech">🚀 PropTech Companies</option>
+                          <option value="hvac">❄️ HVAC Vendors</option>
+                          <option value="roofing">🏠 Roofing Vendors</option>
+                          <option value="insurance">🛡️ Insurance Providers</option>
+                          <option value="pest_control">🐜 Pest Control</option>
+                          <option value="elevator">🛗 Elevator Services</option>
+                          <option value="multifamily_marketing">📣 Multifamily Marketing</option>
+                          <option value="resident_amenities">🎁 Resident Amenities</option>
+                          <option value="internet_providers">🌐 Internet & Telecom</option>
+                          <option value="security_access">🔒 Security & Access Control</option>
+                          <option value="general">💼 General B2B Vendors</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={finalizeImport}
+                  className="w-full bg-orange-600 hover:bg-orange-500 text-white font-bold text-sm py-4 rounded-2xl shadow-lg shadow-orange-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span>✨ Complete Mapping & Import to Campaign Queue</span>
+                </button>
               </div>
-              <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={e => { if (e.target.files[0]) processFile(e.target.files[0]) }} />
-            </div>
+            ) : (
+              <div
+                onDrop={onDrop}
+                onDragOver={e => { e.preventDefault(); setIsDragging(true) }}
+                onDragLeave={() => setIsDragging(false)}
+                onClick={() => fileRef.current?.click()}
+                className={`border-2 border-dashed rounded-3xl p-16 text-center cursor-pointer transition-all duration-300 flex flex-col items-center justify-center min-h-[340px] ${isDragging ? 'border-orange-500 bg-orange-600/5' : 'border-gray-800 bg-gray-900/20 hover:border-gray-700 hover:bg-gray-900/40'}`}
+              >
+                <div className="w-16 h-16 bg-gray-900 rounded-2xl border border-gray-800 flex items-center justify-center text-3xl mb-5 shadow-inner">📄</div>
+                <h3 className="text-white font-bold text-lg mb-1">Step 1: Select leads file (.xlsx, .csv)</h3>
+                <p className="text-gray-500 text-sm max-w-sm mb-6">
+                  Select <code className="bg-gray-800 px-1.5 py-0.5 rounded text-orange-400 font-mono text-xs">wastewater_exhibit_list_categorized.xlsx</code> or any Excel/CSV file to parse headers and map columns.
+                </p>
+                <div className="bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold px-6 py-3 rounded-xl transition-all shadow-md shadow-orange-600/10 hover:shadow-orange-600/20">
+                  📂 Browse Local File & Parse Headers
+                </div>
+                <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={e => { if (e.target.files[0]) processFile(e.target.files[0]) }} />
+              </div>
+            )}
 
             <div className="bg-gray-900/50 backdrop-blur-md border border-gray-800/80 rounded-2xl p-6">
               <h3 className="text-white font-bold text-sm mb-4 flex items-center gap-2">

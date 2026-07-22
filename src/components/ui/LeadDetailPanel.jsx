@@ -2,7 +2,25 @@ import { useState } from 'react'
 import { useLeadsStore } from '../../store/leadsStore'
 import { useTemplatesStore } from '../../store/templatesStore'
 
-const NICHES = ['Dental', 'SaaS', 'Real Estate', 'Junk Removal', 'Healthcare Staffing', 'Education']
+const NICHES = [
+  'Property Management',
+  'PropTech & Software',
+  'HVAC & Mechanical',
+  'Roofing Contractors',
+  'Insurance Providers',
+  'Pest Control',
+  'Elevator Services',
+  'Multifamily Marketing',
+  'Resident Amenities',
+  'Internet & Telecom',
+  'Security & Access Control',
+  'Wastewater & Septic',
+  'Equipment Financing',
+  'Dental',
+  'Restaurant',
+  'Real Estate',
+  'General B2B'
+]
 const STATUSES = ['New', 'Pitched', 'Warm', 'Cold', 'Lost']
 const STAGES = ['New', 'Pitched', 'Negotiating', 'Closed', 'Cold']
 

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTemplatesStore } from '../store/templatesStore'
 
 const TYPES  = ['All', 'Cold', 'Follow Up', 'Closing', 'Re-engagement']
-const NICHES = ['All', 'Dental', 'SaaS', 'Real Estate', 'Junk Removal', 'Healthcare Staffing', 'Education']
+const NICHES = ['All', 'Property Management', 'PropTech', 'HVAC Vendor', 'Roofing Vendor', 'Insurance Provider', 'Pest Control', 'Elevator Services', 'Multifamily Marketing', 'Resident Amenity Provider', 'Internet Provider', 'Security & Access Control', 'Wastewater & Septic', 'Equipment Financing']
 const TYPE_COLORS = {
   'Cold':          'bg-blue-500/20 text-blue-400 border-blue-500/30',
   'Follow Up':     'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',

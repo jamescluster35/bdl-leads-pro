@@ -11,10 +11,13 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
-    base: '/bdl-leads-pro-live/',
+    base: './',
     build: {
       outDir: outDir,
       emptyOutDir: true,
+      rollupOptions: {
+        input: 'index.html'
+      }
     }
   }
 })

@@ -2,24 +2,26 @@ import { useState, useEffect } from 'react'
 import { sheetsApi } from '../lib/sheetsApi'
 
 const NICHES = [
-  'Dentist',
-  'HVAC Specialist',
-  'Roofer',
-  'Plumber',
-  'Chiropractor',
-  'Solar Installer',
-  'Law Firm',
-  'Auto Repair',
-  'Restaurant',
-  'CPA / Accountant',
+  'Property Manager',
+  'PropTech',
+  'HVAC Vendor',
+  'Roofing Vendor',
+  'Insurance Provider',
+  'Pest Control',
+  'Elevator Services',
+  'Multifamily Marketing',
+  'Resident Amenity Provider',
+  'Internet Provider',
+  'Security & Access Control',
+  'Wastewater & Septic',
+  'Equipment Financing',
   'Real Estate Agent',
-  'Junk Removal',
-  'Healthcare Staffing',
-  'Education'
+  'Dentist',
+  'General Contractor'
 ]
 
 export default function ProspectFinderPage() {
-  const [niche, setNiche] = useState('Dentist')
+  const [niche, setNiche] = useState('Property Manager')
   const [city, setCity] = useState('')
   const [preset, setPreset] = useState('Standard')
   const [statusMsg, setStatusMsg] = useState('')

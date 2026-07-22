@@ -2,21 +2,23 @@ import { useState } from 'react'
 import { useLeadsStore } from '../../store/leadsStore'
 
 const NICHES = [
-  'Dentist',
-  'HVAC Specialist',
-  'Roofer',
-  'Plumber',
-  'Chiropractor',
-  'Solar Installer',
-  'Law Firm',
-  'Auto Repair',
+  'Property Management',
+  'PropTech & Software',
+  'HVAC & Mechanical',
+  'Roofing Contractors',
+  'Insurance Providers',
+  'Pest Control',
+  'Elevator Services',
+  'Multifamily Marketing',
+  'Resident Amenities',
+  'Internet & Telecom',
+  'Security & Access Control',
+  'Wastewater & Septic',
+  'Equipment Financing',
+  'Dental',
   'Restaurant',
-  'Lodging',
-  'CPA / Accountant',
-  'Real Estate Agent',
-  'Junk Removal',
-  'Healthcare Staffing',
-  'Education'
+  'Real Estate',
+  'General B2B'
 ]
 const STATUSES = ['New', 'Warm', 'Cold']
 const STAGES = ['New', 'Pitched', 'Negotiating', 'Closed', 'Cold']

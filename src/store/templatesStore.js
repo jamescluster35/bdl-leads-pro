@@ -2,21 +2,276 @@ import { create } from 'zustand'
 import { sheetsApi } from '../lib/sheetsApi'
 
 const DEFAULTS = [
-  { id: 'default-1', name: 'Cold Intro — Dental', niche: 'Dental', type: 'Cold',
-    subject: 'Quick question about your patient list, {{firstName}}',
-    body: `Hi {{firstName}},\n\nI came across {{company}} and wanted to reach out directly.\n\nWe help dental practices get verified contact lists of local patients and referral sources — so your team spends less time prospecting and more time closing.\n\nWe recently helped a practice in {{city}} add 47 new patient leads in one week.\n\nWould a list of 100 verified contacts in {{city}} be useful for your team?\n\nHappy to send over a sample.\n\nBest,\n{{senderName}}`, createdAt: '' },
-  { id: 'default-2', name: 'Follow Up #1 — General', niche: 'All', type: 'Follow Up',
-    subject: 'Re: Quick question',
-    body: `Hi {{firstName}},\n\nJust wanted to make sure this didn't get buried.\n\nWe have a verified list of 100 contacts in {{city}} ready to go — priced at $147 flat.\n\nNo subscription, no upsells. One payment, yours to keep.\n\nWorth a quick look?\n\n{{senderName}}`, createdAt: '' },
-  { id: 'default-3', name: 'Closing — Property Managers', niche: 'Real Estate', type: 'Closing',
-    subject: '100 BC property manager contacts — $147',
-    body: `Hi {{firstName}},\n\nFollowing up on the BC property manager list we discussed.\n\n100 verified contacts, ready to send today — $147 flat.\n\nIf you want to move forward, just reply "yes" and I'll send the invoice over.\n\n{{senderName}}`, createdAt: '' },
-  { id: 'default-4', name: 'Re-engagement — Cold Lead', niche: 'All', type: 'Re-engagement',
-    subject: 'Still interested in {{city}} leads?',
-    body: `Hi {{firstName}},\n\nI know timing isn't always right — just wanted to check in one last time.\n\nWe still have a verified list of 100 {{niche}} contacts in {{city}} available.\n\nIf it's not a fit right now, no worries at all. But if you'd like to take a look, just reply and I'll send the details over.\n\n{{senderName}}`, createdAt: '' },
-  { id: 'default-5', name: 'Cold Intro — SaaS', niche: 'SaaS', type: 'Cold',
-    subject: 'Verified SaaS buyer contacts for {{company}}',
-    body: `Hi {{firstName}},\n\nQuick one — we build verified contact lists for SaaS companies looking to reach decision-makers faster.\n\nWe can put together 100 verified contacts in your target market for $147 flat.\n\nWould that be useful for your outreach this quarter?\n\n{{senderName}}`, createdAt: '' },
+  {
+    "variant": "Variant A (Conversational Question)",
+    "id": "proptech-variant-a",
+    "name": "Variant A \u2014 PropTech Companies (Soft Question)",
+    "niche": "PropTech",
+    "type": "Cold",
+    "subject": "quick question regarding {city}",
+    "body": "Hi {firstName|there},\n\nI came across {company|your team} and noticed your work in property technology & software solutions.\n\nWe recently compiled a verified contact list of local Property Managers & HOA decision-makers in {city|your target market}.\n\nAre you currently looking to connect or partner with property managers in {city|your area} right now?\n\nIf so, let me know and I'd be glad to send over a quick preview for your team to take a look at.\n\nBest regards,\n{senderName}"
+  },
+  {
+    "variant": "Variant B (Partner / Referral Angle)",
+    "id": "proptech-variant-b",
+    "name": "Variant B \u2014 PropTech Companies (Partner Offer)",
+    "niche": "PropTech",
+    "type": "Cold",
+    "subject": "property manager partner in {city}",
+    "body": "Hi {firstName|there},\n\nReaching out because we frequently get asked by local Property Managers in {city|your area} for reliable property technology & software solutions providers.\n\nWe have a verified list of active PM decision-makers looking for new vendor partners.\n\nWould it be helpful if I shared a sample list of these PM contacts for {company|your team} to review?\n\nBest,\n{senderName}"
+  },
+  {
+    "variant": "Variant C (Direct Problem-Solver)",
+    "id": "proptech-variant-c",
+    "name": "Variant C \u2014 PropTech Companies (Direct Sourcing)",
+    "niche": "PropTech",
+    "type": "Cold",
+    "subject": "connecting with {city} PMs",
+    "body": "Hi {firstName|there},\n\nQuick note \u2014 we help PropTech teams reach direct Property Manager & HOA decision-makers faster without outdated directories.\n\nWe have a fresh list of verified PM contacts in {city|your market} ready.\n\nWorth a 10-second look at a sample preview?\n\nBest regards,\n{senderName}"
+  },
+  {
+    "variant": "Variant A (Conversational Question)",
+    "id": "hvac-variant-a",
+    "name": "Variant A \u2014 HVAC Vendors (Soft Question)",
+    "niche": "HVAC Vendors",
+    "type": "Cold",
+    "subject": "quick question regarding {city}",
+    "body": "Hi {firstName|there},\n\nI came across {company|your team} and noticed your work in HVAC & commercial mechanical services.\n\nWe recently compiled a verified contact list of local Property Managers & HOA decision-makers in {city|your target market}.\n\nAre you currently looking to connect or partner with property managers in {city|your area} right now?\n\nIf so, let me know and I'd be glad to send over a quick preview for your team to take a look at.\n\nBest regards,\n{senderName}"
+  },
+  {
+    "variant": "Variant B (Partner / Referral Angle)",
+    "id": "hvac-variant-b",
+    "name": "Variant B \u2014 HVAC Vendors (Partner Offer)",
+    "niche": "HVAC Vendors",
+    "type": "Cold",
+    "subject": "property manager partner in {city}",
+    "body": "Hi {firstName|there},\n\nReaching out because we frequently get asked by local Property Managers in {city|your area} for reliable HVAC & commercial mechanical services providers.\n\nWe have a verified list of active PM decision-makers looking for new vendor partners.\n\nWould it be helpful if I shared a sample list of these PM contacts for {company|your team} to review?\n\nBest,\n{senderName}"
+  },
+  {
+    "variant": "Variant C (Direct Problem-Solver)",
+    "id": "hvac-variant-c",
+    "name": "Variant C \u2014 HVAC Vendors (Direct Sourcing)",
+    "niche": "HVAC Vendors",
+    "type": "Cold",
+    "subject": "connecting with {city} PMs",
+    "body": "Hi {firstName|there},\n\nQuick note \u2014 we help HVAC Vendors teams reach direct Property Manager & HOA decision-makers faster without outdated directories.\n\nWe have a fresh list of verified PM contacts in {city|your market} ready.\n\nWorth a 10-second look at a sample preview?\n\nBest regards,\n{senderName}"
+  },
+  {
+    "variant": "Variant A (Conversational Question)",
+    "id": "roofing-variant-a",
+    "name": "Variant A \u2014 Roofing Vendors (Soft Question)",
+    "niche": "Roofing Vendors",
+    "type": "Cold",
+    "subject": "quick question regarding {city}",
+    "body": "Hi {firstName|there},\n\nI came across {company|your team} and noticed your work in commercial roofing & property restoration.\n\nWe recently compiled a verified contact list of local Property Managers & HOA decision-makers in {city|your target market}.\n\nAre you currently looking to connect or partner with property managers in {city|your area} right now?\n\nIf so, let me know and I'd be glad to send over a quick preview for your team to take a look at.\n\nBest regards,\n{senderName}"
+  },
+  {
+    "variant": "Variant B (Partner / Referral Angle)",
+    "id": "roofing-variant-b",
+    "name": "Variant B \u2014 Roofing Vendors (Partner Offer)",
+    "niche": "Roofing Vendors",
+    "type": "Cold",
+    "subject": "property manager partner in {city}",
+    "body": "Hi {firstName|there},\n\nReaching out because we frequently get asked by local Property Managers in {city|your area} for reliable commercial roofing & property restoration providers.\n\nWe have a verified list of active PM decision-makers looking for new vendor partners.\n\nWould it be helpful if I shared a sample list of these PM contacts for {company|your team} to review?\n\nBest,\n{senderName}"
+  },
+  {
+    "variant": "Variant C (Direct Problem-Solver)",
+    "id": "roofing-variant-c",
+    "name": "Variant C \u2014 Roofing Vendors (Direct Sourcing)",
+    "niche": "Roofing Vendors",
+    "type": "Cold",
+    "subject": "connecting with {city} PMs",
+    "body": "Hi {firstName|there},\n\nQuick note \u2014 we help Roofing Vendors teams reach direct Property Manager & HOA decision-makers faster without outdated directories.\n\nWe have a fresh list of verified PM contacts in {city|your market} ready.\n\nWorth a 10-second look at a sample preview?\n\nBest regards,\n{senderName}"
+  },
+  {
+    "variant": "Variant A (Conversational Question)",
+    "id": "insurance-variant-a",
+    "name": "Variant A \u2014 Insurance Providers (Soft Question)",
+    "niche": "Insurance Providers",
+    "type": "Cold",
+    "subject": "quick question regarding {city}",
+    "body": "Hi {firstName|there},\n\nI came across {company|your team} and noticed your work in commercial property insurance & risk solutions.\n\nWe recently compiled a verified contact list of local Property Managers & HOA decision-makers in {city|your target market}.\n\nAre you currently looking to connect or partner with property managers in {city|your area} right now?\n\nIf so, let me know and I'd be glad to send over a quick preview for your team to take a look at.\n\nBest regards,\n{senderName}"
+  },
+  {
+    "variant": "Variant B (Partner / Referral Angle)",
+    "id": "insurance-variant-b",
+    "name": "Variant B \u2014 Insurance Providers (Partner Offer)",
+    "niche": "Insurance Providers",
+    "type": "Cold",
+    "subject": "property manager partner in {city}",
+    "body": "Hi {firstName|there},\n\nReaching out because we frequently get asked by local Property Managers in {city|your area} for reliable commercial property insurance & risk solutions providers.\n\nWe have a verified list of active PM decision-makers looking for new vendor partners.\n\nWould it be helpful if I shared a sample list of these PM contacts for {company|your team} to review?\n\nBest,\n{senderName}"
+  },
+  {
+    "variant": "Variant C (Direct Problem-Solver)",
+    "id": "insurance-variant-c",
+    "name": "Variant C \u2014 Insurance Providers (Direct Sourcing)",
+    "niche": "Insurance Providers",
+    "type": "Cold",
+    "subject": "connecting with {city} PMs",
+    "body": "Hi {firstName|there},\n\nQuick note \u2014 we help Insurance Providers teams reach direct Property Manager & HOA decision-makers faster without outdated directories.\n\nWe have a fresh list of verified PM contacts in {city|your market} ready.\n\nWorth a 10-second look at a sample preview?\n\nBest regards,\n{senderName}"
+  },
+  {
+    "variant": "Variant A (Conversational Question)",
+    "id": "pest_control-variant-a",
+    "name": "Variant A \u2014 Pest Control Companies (Soft Question)",
+    "niche": "Pest Control",
+    "type": "Cold",
+    "subject": "quick question regarding {city}",
+    "body": "Hi {firstName|there},\n\nI came across {company|your team} and noticed your work in commercial pest management & extermination services.\n\nWe recently compiled a verified contact list of local Property Managers & HOA decision-makers in {city|your target market}.\n\nAre you currently looking to connect or partner with property managers in {city|your area} right now?\n\nIf so, let me know and I'd be glad to send over a quick preview for your team to take a look at.\n\nBest regards,\n{senderName}"
+  },
+  {
+    "variant": "Variant B (Partner / Referral Angle)",
+    "id": "pest_control-variant-b",
+    "name": "Variant B \u2014 Pest Control Companies (Partner Offer)",
+    "niche": "Pest Control",
+    "type": "Cold",
+    "subject": "property manager partner in {city}",
+    "body": "Hi {firstName|there},\n\nReaching out because we frequently get asked by local Property Managers in {city|your area} for reliable commercial pest management & extermination services providers.\n\nWe have a verified list of active PM decision-makers looking for new vendor partners.\n\nWould it be helpful if I shared a sample list of these PM contacts for {company|your team} to review?\n\nBest,\n{senderName}"
+  },
+  {
+    "variant": "Variant C (Direct Problem-Solver)",
+    "id": "pest_control-variant-c",
+    "name": "Variant C \u2014 Pest Control Companies (Direct Sourcing)",
+    "niche": "Pest Control",
+    "type": "Cold",
+    "subject": "connecting with {city} PMs",
+    "body": "Hi {firstName|there},\n\nQuick note \u2014 we help Pest Control teams reach direct Property Manager & HOA decision-makers faster without outdated directories.\n\nWe have a fresh list of verified PM contacts in {city|your market} ready.\n\nWorth a 10-second look at a sample preview?\n\nBest regards,\n{senderName}"
+  },
+  {
+    "variant": "Variant A (Conversational Question)",
+    "id": "elevator-variant-a",
+    "name": "Variant A \u2014 Elevator Companies (Soft Question)",
+    "niche": "Elevator Services",
+    "type": "Cold",
+    "subject": "quick question regarding {city}",
+    "body": "Hi {firstName|there},\n\nI came across {company|your team} and noticed your work in elevator maintenance & modernization services.\n\nWe recently compiled a verified contact list of local Property Managers & HOA decision-makers in {city|your target market}.\n\nAre you currently looking to connect or partner with property managers in {city|your area} right now?\n\nIf so, let me know and I'd be glad to send over a quick preview for your team to take a look at.\n\nBest regards,\n{senderName}"
+  },
+  {
+    "variant": "Variant B (Partner / Referral Angle)",
+    "id": "elevator-variant-b",
+    "name": "Variant B \u2014 Elevator Companies (Partner Offer)",
+    "niche": "Elevator Services",
+    "type": "Cold",
+    "subject": "property manager partner in {city}",
+    "body": "Hi {firstName|there},\n\nReaching out because we frequently get asked by local Property Managers in {city|your area} for reliable elevator maintenance & modernization services providers.\n\nWe have a verified list of active PM decision-makers looking for new vendor partners.\n\nWould it be helpful if I shared a sample list of these PM contacts for {company|your team} to review?\n\nBest,\n{senderName}"
+  },
+  {
+    "variant": "Variant C (Direct Problem-Solver)",
+    "id": "elevator-variant-c",
+    "name": "Variant C \u2014 Elevator Companies (Direct Sourcing)",
+    "niche": "Elevator Services",
+    "type": "Cold",
+    "subject": "connecting with {city} PMs",
+    "body": "Hi {firstName|there},\n\nQuick note \u2014 we help Elevator Services teams reach direct Property Manager & HOA decision-makers faster without outdated directories.\n\nWe have a fresh list of verified PM contacts in {city|your market} ready.\n\nWorth a 10-second look at a sample preview?\n\nBest regards,\n{senderName}"
+  },
+  {
+    "variant": "Variant A (Conversational Question)",
+    "id": "multifamily_marketing-variant-a",
+    "name": "Variant A \u2014 Multifamily Marketing Agencies (Soft Question)",
+    "niche": "Multifamily Marketing",
+    "type": "Cold",
+    "subject": "quick question regarding {city}",
+    "body": "Hi {firstName|there},\n\nI came across {company|your team} and noticed your work in apartment & multifamily marketing solutions.\n\nWe recently compiled a verified contact list of local Property Managers & HOA decision-makers in {city|your target market}.\n\nAre you currently looking to connect or partner with property managers in {city|your area} right now?\n\nIf so, let me know and I'd be glad to send over a quick preview for your team to take a look at.\n\nBest regards,\n{senderName}"
+  },
+  {
+    "variant": "Variant B (Partner / Referral Angle)",
+    "id": "multifamily_marketing-variant-b",
+    "name": "Variant B \u2014 Multifamily Marketing Agencies (Partner Offer)",
+    "niche": "Multifamily Marketing",
+    "type": "Cold",
+    "subject": "property manager partner in {city}",
+    "body": "Hi {firstName|there},\n\nReaching out because we frequently get asked by local Property Managers in {city|your area} for reliable apartment & multifamily marketing solutions providers.\n\nWe have a verified list of active PM decision-makers looking for new vendor partners.\n\nWould it be helpful if I shared a sample list of these PM contacts for {company|your team} to review?\n\nBest,\n{senderName}"
+  },
+  {
+    "variant": "Variant C (Direct Problem-Solver)",
+    "id": "multifamily_marketing-variant-c",
+    "name": "Variant C \u2014 Multifamily Marketing Agencies (Direct Sourcing)",
+    "niche": "Multifamily Marketing",
+    "type": "Cold",
+    "subject": "connecting with {city} PMs",
+    "body": "Hi {firstName|there},\n\nQuick note \u2014 we help Multifamily Marketing teams reach direct Property Manager & HOA decision-makers faster without outdated directories.\n\nWe have a fresh list of verified PM contacts in {city|your market} ready.\n\nWorth a 10-second look at a sample preview?\n\nBest regards,\n{senderName}"
+  },
+  {
+    "variant": "Variant A (Conversational Question)",
+    "id": "resident_amenities-variant-a",
+    "name": "Variant A \u2014 Resident Amenity Providers (Soft Question)",
+    "niche": "Resident Amenities",
+    "type": "Cold",
+    "subject": "quick question regarding {city}",
+    "body": "Hi {firstName|there},\n\nI came across {company|your team} and noticed your work in resident perk & amenity services.\n\nWe recently compiled a verified contact list of local Property Managers & HOA decision-makers in {city|your target market}.\n\nAre you currently looking to connect or partner with property managers in {city|your area} right now?\n\nIf so, let me know and I'd be glad to send over a quick preview for your team to take a look at.\n\nBest regards,\n{senderName}"
+  },
+  {
+    "variant": "Variant B (Partner / Referral Angle)",
+    "id": "resident_amenities-variant-b",
+    "name": "Variant B \u2014 Resident Amenity Providers (Partner Offer)",
+    "niche": "Resident Amenities",
+    "type": "Cold",
+    "subject": "property manager partner in {city}",
+    "body": "Hi {firstName|there},\n\nReaching out because we frequently get asked by local Property Managers in {city|your area} for reliable resident perk & amenity services providers.\n\nWe have a verified list of active PM decision-makers looking for new vendor partners.\n\nWould it be helpful if I shared a sample list of these PM contacts for {company|your team} to review?\n\nBest,\n{senderName}"
+  },
+  {
+    "variant": "Variant C (Direct Problem-Solver)",
+    "id": "resident_amenities-variant-c",
+    "name": "Variant C \u2014 Resident Amenity Providers (Direct Sourcing)",
+    "niche": "Resident Amenities",
+    "type": "Cold",
+    "subject": "connecting with {city} PMs",
+    "body": "Hi {firstName|there},\n\nQuick note \u2014 we help Resident Amenities teams reach direct Property Manager & HOA decision-makers faster without outdated directories.\n\nWe have a fresh list of verified PM contacts in {city|your market} ready.\n\nWorth a 10-second look at a sample preview?\n\nBest regards,\n{senderName}"
+  },
+  {
+    "variant": "Variant A (Conversational Question)",
+    "id": "internet_providers-variant-a",
+    "name": "Variant A \u2014 Internet Providers (Soft Question)",
+    "niche": "Internet Providers",
+    "type": "Cold",
+    "subject": "quick question regarding {city}",
+    "body": "Hi {firstName|there},\n\nI came across {company|your team} and noticed your work in bulk MDU telecom & high-speed internet services.\n\nWe recently compiled a verified contact list of local Property Managers & HOA decision-makers in {city|your target market}.\n\nAre you currently looking to connect or partner with property managers in {city|your area} right now?\n\nIf so, let me know and I'd be glad to send over a quick preview for your team to take a look at.\n\nBest regards,\n{senderName}"
+  },
+  {
+    "variant": "Variant B (Partner / Referral Angle)",
+    "id": "internet_providers-variant-b",
+    "name": "Variant B \u2014 Internet Providers (Partner Offer)",
+    "niche": "Internet Providers",
+    "type": "Cold",
+    "subject": "property manager partner in {city}",
+    "body": "Hi {firstName|there},\n\nReaching out because we frequently get asked by local Property Managers in {city|your area} for reliable bulk MDU telecom & high-speed internet services providers.\n\nWe have a verified list of active PM decision-makers looking for new vendor partners.\n\nWould it be helpful if I shared a sample list of these PM contacts for {company|your team} to review?\n\nBest,\n{senderName}"
+  },
+  {
+    "variant": "Variant C (Direct Problem-Solver)",
+    "id": "internet_providers-variant-c",
+    "name": "Variant C \u2014 Internet Providers (Direct Sourcing)",
+    "niche": "Internet Providers",
+    "type": "Cold",
+    "subject": "connecting with {city} PMs",
+    "body": "Hi {firstName|there},\n\nQuick note \u2014 we help Internet Providers teams reach direct Property Manager & HOA decision-makers faster without outdated directories.\n\nWe have a fresh list of verified PM contacts in {city|your market} ready.\n\nWorth a 10-second look at a sample preview?\n\nBest regards,\n{senderName}"
+  },
+  {
+    "variant": "Variant A (Conversational Question)",
+    "id": "security_access-variant-a",
+    "name": "Variant A \u2014 Security & Access Control Vendors (Soft Question)",
+    "niche": "Security & Access Control",
+    "type": "Cold",
+    "subject": "quick question regarding {city}",
+    "body": "Hi {firstName|there},\n\nI came across {company|your team} and noticed your work in access control & property security solutions.\n\nWe recently compiled a verified contact list of local Property Managers & HOA decision-makers in {city|your target market}.\n\nAre you currently looking to connect or partner with property managers in {city|your area} right now?\n\nIf so, let me know and I'd be glad to send over a quick preview for your team to take a look at.\n\nBest regards,\n{senderName}"
+  },
+  {
+    "variant": "Variant B (Partner / Referral Angle)",
+    "id": "security_access-variant-b",
+    "name": "Variant B \u2014 Security & Access Control Vendors (Partner Offer)",
+    "niche": "Security & Access Control",
+    "type": "Cold",
+    "subject": "property manager partner in {city}",
+    "body": "Hi {firstName|there},\n\nReaching out because we frequently get asked by local Property Managers in {city|your area} for reliable access control & property security solutions providers.\n\nWe have a verified list of active PM decision-makers looking for new vendor partners.\n\nWould it be helpful if I shared a sample list of these PM contacts for {company|your team} to review?\n\nBest,\n{senderName}"
+  },
+  {
+    "variant": "Variant C (Direct Problem-Solver)",
+    "id": "security_access-variant-c",
+    "name": "Variant C \u2014 Security & Access Control Vendors (Direct Sourcing)",
+    "niche": "Security & Access Control",
+    "type": "Cold",
+    "subject": "connecting with {city} PMs",
+    "body": "Hi {firstName|there},\n\nQuick note \u2014 we help Security & Access Control teams reach direct Property Manager & HOA decision-makers faster without outdated directories.\n\nWe have a fresh list of verified PM contacts in {city|your market} ready.\n\nWorth a 10-second look at a sample preview?\n\nBest regards,\n{senderName}"
+  }
 ]
 
 export const useTemplatesStore = create((set, get) => ({
