@@ -66,19 +66,28 @@ A built-in utility allowing lead research without API charges:
 
 ---
 
+## 👨‍💻 My Contribution & Role Alignment
+
+* **Target Roles**: `Data Operations Lead` | `AI Automation Engineer` | `BI Developer`
+* **Workflow Architecture**: Designed lead priority scoring logic (0-100 pts), idle security timeouts (30 mins), and Apps Script macro API routing.
+* **Frontend Development**: Built responsive React components using Zustand state management and Tailwind CSS styling.
+* **Testing & Security**: Implemented client-side password authentication gate and idle session inactivity watcher (`useIdleTimer`).
+
+---
+
 ## 🚀 Local Development Setup
 
 ### 1. Prerequisites
 Ensure you have Node.js (v18+) installed on your local computer.
 
 ### 2. Installation
-Clone the repository and install the Vite dependencies:
+Clone the repository and install dependencies:
 ```bash
 # Clone the repository
-git clone https://github.com/jamescluster35/bdl-leads-pro-crm.git
+git clone https://github.com/LeadGenData/bdl-leads-pro.git
 
 # Navigate into project folder
-cd bdl-leads-pro-crm
+cd bdl-leads-pro
 
 # Install packages
 npm install
