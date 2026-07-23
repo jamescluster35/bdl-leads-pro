@@ -6,7 +6,7 @@ This repository houses the modern component-based **Client CRM Portal & Dashboar
 
 ## 📁 Repository Directory Structure
 
-```
+```text
 bdl-leads-pro/
 ├── src/
 │   ├── components/
@@ -45,7 +45,9 @@ bdl-leads-pro/
 ## ⚙️ Core CRM Systems
 
 ### 1. Lead Priority Scoring Engine
+
 Leads are scored dynamically out of **100 points** locally in the portal without polluting your spreadsheet database with raw calculations. The score calculates based on:
+
 * **Deal Stage (Max 30 pts):** `Negotiating` (30), `Pitched` (20), `New` (10).
 * **Lead Status (Max 25 pts):** `Warm` (25), `New` (15), `Cold` (5).
 * **Follow-Up Count (Max 20 pts):** Sweet spot of `1-3` (20), `0` (10), `>3` (5).
@@ -54,13 +56,16 @@ Leads are scored dynamically out of **100 points** locally in the portal without
 *Displays with glowing badge states matching priority tiers (High, Medium, Low) and supports automatic sorting.*
 
 ### 2. Smart Prospect Finder
+
 A built-in utility allowing lead research without API charges:
+
 * Opens pre-populated local searches in Google Maps (`[niche] in [city]`) to identify businesses with low reviews or missing sites.
 * Opens target searches in Google Search (`[niche] [city] email contact`) to extract emails.
 * Includes a daily target checklist that automatically tracks progress for **10 leads per day** (resets automatically at midnight).
 * Houses administration panels to manually run follow-up email notifications or configure daily 9 AM backend reminders.
 
 ### 3. CRM Security & Idle Guard
+
 * CRM access is restricted by a localized security password gate.
 * Implements an **Idle Session Timer**: after 28 minutes of user inactivity (no mouse movements or keystrokes), a warning modal triggers. After 30 minutes, it automatically signs the user out to protect pipeline confidentiality.
 
@@ -78,10 +83,13 @@ A built-in utility allowing lead research without API charges:
 ## 🚀 Local Development Setup
 
 ### 1. Prerequisites
+
 Ensure you have Node.js (v18+) installed on your local computer.
 
 ### 2. Installation
+
 Clone the repository and install dependencies:
+
 ```bash
 # Clone the repository
 git clone https://github.com/LeadGenData/bdl-leads-pro.git
@@ -94,15 +102,21 @@ npm install
 ```
 
 ### 3. Run Development Server
+
 Start the local server with hot reloading:
+
 ```bash
 npm run dev
 ```
+
 Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ### 4. Create Production Build
+
 Bundle the assets for high-performance deployment:
+
 ```bash
 npm run build
 ```
+
 Vite will compile the code to the `/dist` directory, which can be deployed to static hosting solutions like Cloudflare Pages, Netlify, or GitHub Pages.
